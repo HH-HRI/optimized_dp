@@ -267,8 +267,7 @@ def graph_4D(my_object, g, compMethod):
 
                             # Find optimal disturbance
                             dOpt = my_object.optDstb(t, (x1[i], x2[j], x3[k], x4[l]),
-                                                    (dV_dx1[0], dV_dx2[0], dV_dx3[0], 
-dV_dx4[0]))
+                                                    (dV_dx1[0], dV_dx2[0], dV_dx3[0], dV_dx4[0]))
 
                             # Find rates of changes based on dynamics equation
                             dx1_dt, dx2_dt, dx3_dt, dx4_dt = my_object.dynamics(t, (x1[i], x2[j], x3[k], x4[l]), uOpt, dOpt)
