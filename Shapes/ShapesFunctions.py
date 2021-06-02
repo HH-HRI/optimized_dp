@@ -62,7 +62,7 @@ def ShapeRectangle(grid, target_min, target_max):
 
     for i in range(grid.dims):
         data = np.maximum(data,  grid.vs[i] - target_max[i])
-        data = np.maximum(data, -grid.vs[1] + target_min[i])
+        data = np.maximum(data, -grid.vs[i] + target_min[i])
 
     return data
 
