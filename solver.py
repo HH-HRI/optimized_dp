@@ -83,7 +83,7 @@ def solveValueIteration(MDP_obj):
     return V
 
 
-def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option):
+def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extraArgs):
     print("Welcome to optimized_dp \n")
 
     ################### PARSING ARGUMENTS FROM USERS #####################
@@ -105,7 +105,16 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option):
     V_1 = hcl.asarray(np.zeros(tuple(grid.pts_each_dim)))
     l0  = hcl.asarray(init_value)
     probe = hcl.asarray(np.zeros(tuple(grid.pts_each_dim)))
-    #obstacle = hcl.asarray(cstraint_values)
+
+    # if there are no obstacles, initialize g0 to array of inf
+    # post integration steps won't matter
+    if (isinstance(extraArgs.get('obstacles'), np.ndarray)):
+        print('defining obstacles')
+        g0 = hcl.asarray(extraArgs['obstacles'])
+
+    else:
+        print("no obstacles!")
+        g0 = hcl.asarray(np.ones(tuple(grid.pts_each_dim))*np.inf)
 
     list_x1 = np.reshape(grid.vs[0], grid.pts_each_dim[0])
     list_x2 = np.reshape(grid.vs[1], grid.pts_each_dim[1])
@@ -160,8 +169,9 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option):
              # Run the execution and pass input into graph
              if grid.dims == 3:
                 solve_pde(V_1, V_0, list_x1, list_x2, list_x3, t_minh, l0)
+             # start obstacle support for this specific case.
              if grid.dims == 4:
-                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, t_minh, l0, probe)
+                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, t_minh, l0, g0, probe)
              if grid.dims == 5:
                 solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5 ,t_minh, l0)
              if grid.dims == 6:
