@@ -89,7 +89,7 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
     ################### PARSING ARGUMENTS FROM USERS #####################
 
     parser = ArgumentParser()
-    parser.add_argument("-p", "--plot", default=True, type=bool)
+    parser.add_argument("-p", "--plot", default=False, type=bool)
     # # Print out LLVM option only
     # parser.add_argument("-l", "--llvm", default=False, type=bool)
     args = parser.parse_args()
