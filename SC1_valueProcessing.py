@@ -58,7 +58,8 @@ def getAction(state, value, grid_space, controls):
 
     return [accel, vlat]
 
-
+# inputs: np array specifying joint state, final value function, column vector with each entry being the linspace specifying the given dimension
+# output: state value
 def getValue(state, value, grid_space):
 
     x1 = grid_space[0]
