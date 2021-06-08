@@ -168,14 +168,14 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
 
              # Run the execution and pass input into graph
              if grid.dims == 3:
-                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, t_minh, l0)
+                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, t_minh, l0, g0)
              # start obstacle support for this specific case.
              if grid.dims == 4:
                 solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, t_minh, l0, g0, probe)
              if grid.dims == 5:
-                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5 ,t_minh, l0)
+                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5 ,t_minh, l0, g0)
              if grid.dims == 6:
-                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6, t_minh, l0)
+                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6, t_minh, l0, g0)
 
              tNow = np.asscalar((t_minh.asnumpy())[0])
 

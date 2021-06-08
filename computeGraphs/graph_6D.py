@@ -146,7 +146,7 @@ def graph_6D(my_object, g, compMethod):
     x5 = hcl.placeholder((g.pts_each_dim[4],), name="x5", dtype=hcl.Float())
     x6 = hcl.placeholder((g.pts_each_dim[5],), name="x6", dtype=hcl.Float())
 
-    def graph_create(V_new, V_init, x1, x2, x3, x4, x5, x6, t, l0):
+    def graph_create(V_new, V_init, x1, x2, x3, x4, x5, x6, t, l0, g0):
         # Specify intermediate tensors
         deriv_diff1 = hcl.compute(V_init.shape, lambda *x: 0, "deriv_diff1")
         deriv_diff2 = hcl.compute(V_init.shape, lambda *x: 0, "deriv_diff2")
@@ -208,6 +208,11 @@ def graph_6D(my_object, g, compMethod):
         def minVWithVInit(i, j, k, l, m, n):
             with hcl.if_(V_new[i, j, k, l, m, n] > V_init[i, j, k, l, m, n]):
                 V_new[i, j, k, l, m, n] = V_init[i, j, k, l, m, n]
+
+        def obstacleAvoid(i, j, k, l, m, n):
+            # if no obstacles, this won't change anything since g0 is initialized to inf at all points
+            with hcl.if_(V_new[i, j, k, l, m, n] < -g0[i, j, k, l, m, n]):
+                V_new[i, j, k, l, m, n] = -g0[i, j, k, l, m, n]                      
 
         # Calculate Hamiltonian for every grid point in V_init
         with hcl.Stage("Hamiltonian"):
@@ -370,12 +375,13 @@ def graph_6D(my_object, g, compMethod):
             alpha5 = hcl.scalar(0, "alpha5")
             alpha6 = hcl.scalar(0, "alpha6")
 
+            ''' missplaced?
             # Find LOWER BOUND optimal disturbance
             dOptL1[0], dOptL2[0], dOptL3[0], dOptL4[0] = my_object.optDstb(t, (x1[i], x2[j], x3[k], x4[l], x5[m], x6[n]), (
             min_deriv1[0], min_deriv2[0], min_deriv3[0], min_deriv4[0], min_deriv5[0], min_deriv6[0]))
             # Find UPPER BOUND optimal disturbance
             dOptU1[0], dOptU2[0], dOptU3[0], dOptU4[0] = my_object.optDstb(t, (x1[i], x2[j], x3[k], x4[l], x5[m], x6[n]), (
-            max_deriv1[0], max_deriv2[0], max_deriv3[0], max_deriv4[0], max_deriv5[0], max_deriv6[0]))
+            max_deriv1[0], max_deriv2[0], max_deriv3[0], max_deriv4[0], max_deriv5[0], max_deriv6[0]))'''
             with hcl.for_(0, V_init.shape[0], name="i") as i:
                 with hcl.for_(0, V_init.shape[1], name="j") as j:
                     with hcl.for_(0, V_init.shape[2], name="k") as k:
@@ -409,6 +415,16 @@ def graph_6D(my_object, g, compMethod):
                                     dx_UU4 = hcl.scalar(0, "dx_UU4")
                                     dx_UU5 = hcl.scalar(0, "dx_UU5")
                                     dx_UU6 = hcl.scalar(0, "dx_UU6")
+
+                                    # placed here \/
+                                    # Find LOWER BOUND optimal disturbance
+                                    dOptL1[0], dOptL2[0], dOptL3[0], dOptL4[0] = my_object.optDstb(t, (x1[i], x2[j], x3[k], x4[l], x5[m], x6[n]), (
+                                    min_deriv1[0], min_deriv2[0], min_deriv3[0], min_deriv4[0], min_deriv5[0], min_deriv6[0]))
+                                    # Find UPPER BOUND optimal disturbance
+                                    dOptU1[0], dOptU2[0], dOptU3[0], dOptU4[0] = my_object.optDstb(t, (x1[i], x2[j], x3[k], x4[l], x5[m], x6[n]), (
+                                    max_deriv1[0], max_deriv2[0], max_deriv3[0], max_deriv4[0], max_deriv5[0], max_deriv6[0]))
+
+
 
                                     # Find LOWER BOUND optimal control
                                     uOptL1[0], uOptL2[0], uOptL3[0], uOptL4[0] = my_object.opt_ctrl(t, (x1[i], x2[j], x3[k], x4[l], x5[m], x6[n]), (
@@ -529,8 +545,11 @@ def graph_6D(my_object, g, compMethod):
         hcl.update(V_init, lambda i, j, k, l, m, n: V_new[i, j, k, l, m, n])
         return result
 
+        # post integration step    
+        hcl.update(V_new, lambda i, j, k, l, m, n: obstacleAvoid(i, j, k, l, m, n))
+        result = hcl.update(V_new, lambda i, j, k, l, m, n: obstacleAvoid(i, j, k, l, m, n))
 
-    s = hcl.create_schedule([V_f, V_init, x1, x2, x3, x4, x5, x6, t, l0], graph_create)
+    s = hcl.create_schedule([V_f, V_init, x1, x2, x3, x4, x5, x6, t, l0, g0], graph_create)
     ##################### CODE OPTIMIZATION HERE ###########################
     print("Optimizing\n")
 

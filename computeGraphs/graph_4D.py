@@ -492,7 +492,7 @@ def graph_4D(my_object, g, compMethod):
                             with hcl.if_(alpha4[0] > max_alpha4[0]):
                                 max_alpha4[0] = alpha4[0]
 
-                                # Determine time step
+        # Determine time step
         delta_t = hcl.compute((1,), lambda x: step_bound(), name="delta_t")
         # Integrate
         result = hcl.update(V_new, lambda i, j, k, l: V_init[i, j, k, l] + V_new[i, j, k, l] * delta_t[0])
