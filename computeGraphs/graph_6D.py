@@ -136,6 +136,8 @@ def graph_6D(my_object, g, compMethod):
     V_f = hcl.placeholder(tuple(g.pts_each_dim), name="V_f", dtype=hcl.Float())
     V_init = hcl.placeholder(tuple(g.pts_each_dim), name="V_init", dtype=hcl.Float())
     l0 = hcl.placeholder(tuple(g.pts_each_dim), name="l0", dtype=hcl.Float())
+    # stationary obstacles
+    g0 = hcl.placeholder(tuple(g.pts_each_dim), name="g0", dtype=hcl.Float())
     t = hcl.placeholder((2,), name="t", dtype=hcl.Float())
 
     # Positions vector
