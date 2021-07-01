@@ -106,4 +106,4 @@ class DubinsCar6D_HRI:
         dx4[0] = uOpt[0]- (self.talpha*state[4])
         dx5[0] =  dOpt[0] - (self.talpha*state[5])
 
-        return (dx0[0], dx1[0], dx2[0], dx3[0], dx4[0]. dx5[0])
+        return (dx0[0], dx1[0], dx2[0], dx3[0], dx4[0], dx5[0])

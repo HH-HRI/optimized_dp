@@ -111,12 +111,13 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
     if (isinstance(extraArgs.get('obstacles'), np.ndarray)):
         print('defining obstacles')
         g0_dim = extraArgs['obstacles'].ndim
-        g0 = hcl.asarray(extraArgs['obstacles'])
+        g0 = extraArgs['obstacles']
+
 
     else:
         print("no obstacles!")
         g0_dim = grid.dims
-        g0 = hcl.asarray(np.ones(tuple(grid.pts_each_dim))*np.inf)
+        g0_i = hcl.asarray(np.ones(tuple(grid.pts_each_dim))*np.inf)
 
     list_x1 = np.reshape(grid.vs[0], grid.pts_each_dim[0])
     list_x2 = np.reshape(grid.vs[1], grid.pts_each_dim[1])
@@ -171,30 +172,31 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
             # Run the execution and pass input into graph
             if grid.dims == 3:
                 if g0_dim > grid.dims:
-                    g0_i = g0[:,:,:,i]
+                    g0_i = hcl.asarray(g0[:,:,:,i])
                 else:
-                    g0_i = g0
+                    g0_i = hcl.asarray(g0)
+
                 solve_pde(V_1, V_0, list_x1, list_x2, list_x3, t_minh, l0, g0_i)
             # start obstacle support for this specific case.
             if grid.dims == 4:
                 if g0_dim > grid.dims:
-                    g0_i = g0[:,:,:,:,i]
+                    g0_i = hcl.asarray(g0[:,:,:,:,i])
                 else:
-                    g0_i = g0
+                    g0_i = hcl.asarray(g0)
                 solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, t_minh, l0, g0_i, probe)
             if grid.dims == 5:
                 # incorporating time varying obstacle
                 if g0_dim > grid.dims:
-                    g0_i = g0[:,:,:,:,:,i]
+                    g0_i = hcl.asarray(g0[:,:,:,:,:,i])
                 else: 
-                    g0_i = g0
+                    g0_i = hcl.asarray(g0)
                 solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5 ,t_minh, l0, g0_i)
             if grid.dims == 6:
                 # incorporating time varying obstacle
                 if g0_dim > grid.dims:
-                    g0_i = g0[:,:,:,:,:,:,i]
+                    g0_i = hcl.asarray(g0[:,:,:,:,:,:,i])
                 else: 
-                    g0_i = g0
+                    g0_i = hcl.asarray(g0)
                 solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6, t_minh, l0, g0_i)
 
             tNow = np.asscalar((t_minh.asnumpy())[0])

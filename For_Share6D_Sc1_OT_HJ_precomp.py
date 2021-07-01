@@ -305,7 +305,7 @@ print("computed obstacles")
 '''
 compute the Reach-Avoid set
 '''
-'''
+
 
 uMode = "min"
 dMode = "max"
@@ -332,4 +332,3 @@ extraArgs['obstacles'] = HJ_avoid
 HJSolver(my_car, g, HJ_target, tau, HJ_minwith, po2, extraArgs)
 
 
-'''

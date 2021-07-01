@@ -1,6 +1,6 @@
 import heterocl as hcl
 
-class DubinsCar4d_HRI:
+class DubinsCar4D_HRI:
     def __init__(self, x, accMax_R, accMax_H, vLatMax_R, vLatMax_H, talpha, uMode, dMode):
     
         self.x = x
