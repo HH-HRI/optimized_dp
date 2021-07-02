@@ -9,6 +9,8 @@ from dynamics.DubinsCar6D_HRI import *
 from plot_options import *
 # Solver core
 from solver import HJSolver
+from Plots.plotting_utilities import *
+
 
 import math
 
@@ -293,12 +295,10 @@ small_number = 1e-5
 tau = np.arange(start=0, stop=lookback_length + small_number, step=t_step)
 obst_list = []
 for timestep in range(len(tau)):
-  obst_list.append(ShapeMoveAvoid(xs,params, timestep, tau))
-
-  #print('found obst')
-  #HJ_avoid[:,:,:,:,:,:,timestep] = Union(HJ_staticAvoid, movingObst)
+  movingObst = ShapeMoveAvoid(xs,params,timestep,tau)
+  obst_list.append(Union(HJ_staticAvoid, movingObst))
 print('got obstacle list')
-HJ_avoid = np.stack(obst_list, axis = 6) 
+HJ_avoid = np.stack(obst_list, axis = -1) 
 print(np.shape(HJ_avoid))
 print("computed obstacles")
 
@@ -329,6 +329,12 @@ Assign one of the following strings to `compMethod` to specify the characteristi
 extraArgs['obstacles'] = HJ_avoid
 
 # HJSolver(dynamics object, grid, initial value function, time length, system objectives, plotting options, extra arguments)
-HJSolver(my_car, g, HJ_target, tau, HJ_minwith, None, extraArgs)
+#valfun = HJSolver(my_car, g, HJ_target, tau, HJ_minwith, None, extraArgs)
+#print(np.shape(valfun))
 
 
+
+po2 = PlotOptions("2d_plot", [1,3], [20,5,0,0])
+#plot_isosurface(g, HJ_staticAvoid, po2)
+
+plot_isosurface(g, HJ_avoid[:,:,:,:,:,:,-1], po2)

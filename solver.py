@@ -160,6 +160,7 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
     iter = 0
     tNow = tau[0]
     print("Started running\n")
+    valfuns = [] #going to keep track of each timestep
     for i in range (1, len(tau)):
         #tNow = tau[i-1]
         t_minh= hcl.asarray(np.array((tNow, tau[i])))
@@ -207,23 +208,32 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
             # Some information printing
             print(t_minh)
             print("Computational time to integrate (s): {:.5f}".format(time.time() - start))
-
+        
+        # after each timestep adding value array to list
+        valfuns.append(V_1.asnumpy())
+    
+    # puts value arrays along new axis
+    V_1 = np.stack(valfuns, axis=-1)
 
     # Time info printing
     print("Total kernel time (s): {:.5f}".format(execution_time))
     print("Finished solving\n")
 
     # Save into file
-    np.save("new_center_final.npy", V_1.asnumpy())
+    np.save("new_center_final.npy", V_1)
+    #np.save("new_center_final.npy", V_1.asnumpy())
 
-    print(np.sum(V_1.asnumpy() < 0))
+    print(np.sum(V_1 < 0))
+    #print(np.sum(V_1.asnumpy() < 0))
 
     ##################### PLOTTING #####################
     if args.plot:
         # plot Value table when speed is maximum
-        plot_isosurface(grid, V_1.asnumpy(), plot_option)
+        plot_isosurface(grid, V_1, plot_option)
+        #plot_isosurface(grid, V_1.asnumpy(), plot_option)
         #plot_isosurface(g, my_V, [0, 1, 3], 10)
-    return V_1.asnumpy()
+    return V_1
+    #return V_1.asnumpy()
 
 def TTRSolver(dynamics_obj, grid, init_value, epsilon, plot_option):
     print("Welcome to optimized_dp \n")
