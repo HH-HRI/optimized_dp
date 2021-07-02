@@ -189,7 +189,7 @@ small_number = 1e-5
 tau = np.arange(start=0, stop=lookback_length + small_number, step=t_step)
 
 
-po2 = PlotOptions("3d_plot", [0,1,2], [])
+#po2 = PlotOptions("3d_plot", [0,1,2], [])
 
 """
 Assign one of the following strings to `compMethod` to specify the characteristics of computation
@@ -202,6 +202,6 @@ Assign one of the following strings to `compMethod` to specify the characteristi
 extraArgs['obstacles'] = HJ_avoid
 
 # HJSolver(dynamics object, grid, initial value function, time length, system objectives, plotting options, extra arguments)
-HJSolver(my_car, g, HJ_target, tau, HJ_minwith, po2, extraArgs)
+HJSolver(my_car, g, HJ_target, tau, HJ_minwith, None, extraArgs)
 
 

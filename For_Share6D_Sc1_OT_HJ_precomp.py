@@ -316,7 +316,7 @@ my_car = DubinsCar6D_HRI([0,0,0,0,0,0], params['accMax_R_sh'], params['accMax_H_
 
 
 
-po2 = PlotOptions("3d_plot", [0,1,2], [])
+#po2 = PlotOptions("3d_plot", [0,1,2], [])
 
 """
 Assign one of the following strings to `compMethod` to specify the characteristics of computation
@@ -329,6 +329,6 @@ Assign one of the following strings to `compMethod` to specify the characteristi
 extraArgs['obstacles'] = HJ_avoid
 
 # HJSolver(dynamics object, grid, initial value function, time length, system objectives, plotting options, extra arguments)
-HJSolver(my_car, g, HJ_target, tau, HJ_minwith, po2, extraArgs)
+HJSolver(my_car, g, HJ_target, tau, HJ_minwith, None, extraArgs)
 
 
