@@ -1,5 +1,6 @@
 import plotly.graph_objects as go
 import numpy as np
+import os 
 
 def plot_isosurface(grid, V, plot_option):
     dims_plot = plot_option.dims_plot
@@ -75,5 +76,8 @@ def plot_isosurface(grid, V, plot_option):
                 showlegend = False
                 
             ))
-            fig.show()
-            print("Please check the plot on your browser.")
+            if not os.path.exists("images"):
+                os.mkdir("images")
+            fig.write_image("images/fig1.png")
+            #fig.show()
+            #print("Please check the plot on your browser.")
