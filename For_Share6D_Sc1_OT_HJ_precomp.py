@@ -328,13 +328,18 @@ Assign one of the following strings to `compMethod` to specify the characteristi
 
 extraArgs['obstacles'] = HJ_avoid
 
-# HJSolver(dynamics object, grid, initial value function, time length, system objectives, plotting options, extra arguments)
-#valfun = HJSolver(my_car, g, HJ_target, tau, HJ_minwith, None, extraArgs)
-#print(np.shape(valfun))
+#HJSolver(dynamics object, grid, initial value function, time length, system objectives, plotting options, extra arguments)
+valfun = HJSolver(my_car, g, HJ_target, tau, HJ_minwith, None, extraArgs)
 
 
+deriv = []
+for timestep in range(len(tau)):
+  spat_deriv = np.gradient(valfun[:,:,:,:,:,:,timestep])
+  deriv.append(spat_deriv)
 
-po2 = PlotOptions("2d_plot", [1,3], [20,5,0,0])
+HJ_Derivs = np.stack(deriv, axis = -1) 
+print(np.shape(HJ_Derivs))
+
+#po2 = PlotOptions("2d_plot", [1,3], [20,5,0,0])
 #plot_isosurface(g, HJ_staticAvoid, po2)
-
-plot_isosurface(g, HJ_avoid[:,:,:,:,:,:,-1], po2)
+#plot_isosurface(g, HJ_avoid[:,:,:,:,:,:,-1], po2)

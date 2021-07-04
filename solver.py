@@ -160,7 +160,8 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
     iter = 0
     tNow = tau[0]
     print("Started running\n")
-    valfuns = [] #going to keep track of each timestep
+    # initial value array first
+    valfuns = [V_0.asnumpy()] #going to keep track of each timestep
     for i in range (1, len(tau)):
         #tNow = tau[i-1]
         t_minh= hcl.asarray(np.array((tNow, tau[i])))
@@ -212,6 +213,9 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
         # after each timestep adding value array to list
         valfuns.append(V_1.asnumpy())
     
+    ##FOR BACKWARDS REACHABILITY NEED TO FLIP OVER LAST AXIS
+    np.flip(valfuns,0)
+
     # puts value arrays along new axis
     V_1 = np.stack(valfuns, axis=-1)
 
