@@ -250,7 +250,7 @@ HJ_grid_max = np.array([params['x1_ul'],  params['x2_ul'],   params['rd_bd_max']
 
 HJ_dims = 6 # number of dimensions
 
-HJ_N = np.array([28, 28, 13, 13, 8, 8]) # number of grid points per dimension
+HJ_N = np.array([150, 150, 15, 15, 15, 15]) # number of grid points per dimension
 
 HJ_pdDims = [] # periodic dimensions
 
@@ -338,7 +338,8 @@ for timestep in range(len(tau)):
   deriv.append(spat_deriv)
 
 HJ_Derivs = np.stack(deriv, axis = -1) 
-print(np.shape(HJ_Derivs))
+np.save("6D_spat_deriv", HJ_Derivs)
+
 
 #po2 = PlotOptions("2d_plot", [1,3], [20,5,0,0])
 #plot_isosurface(g, HJ_staticAvoid, po2)
