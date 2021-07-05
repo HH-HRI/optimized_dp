@@ -333,10 +333,11 @@ valfun = HJSolver(my_car, g, HJ_target, tau, HJ_minwith, None, extraArgs)
 
 deriv = []
 for timestep in range(len(tau)):
-  spat_deriv = np.gradient(valfun[:,:,:,:,:,:,timestep])
+  spat_deriv = np.gradient(valfun[:,:,:,:,:,:,timestep], axis = [2,4])
   deriv.append(spat_deriv)
 
 HJ_Derivs = np.stack(deriv, axis = -1) 
+print(np.shape(HJ_Derivs))
 np.save("6D_spat_deriv", HJ_Derivs)
 
 
