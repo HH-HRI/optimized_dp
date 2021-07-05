@@ -1,5 +1,5 @@
 import numpy as np
-import scipy.io as spio
+#import scipy.io as spio
 # Utility functions to initialize the problem
 from Grid.GridProcessing import Grid
 from Shapes.ShapesFunctions import *
@@ -250,7 +250,7 @@ HJ_grid_max = np.array([params['x1_ul'],  params['x2_ul'],   params['rd_bd_max']
 
 HJ_dims = 6 # number of dimensions
 
-HJ_N = np.array([150, 150, 15, 15, 15, 15]) # number of grid points per dimension
+HJ_N = np.array([100, 100, 10, 10, 10, 10]) # number of grid points per dimension
 
 HJ_pdDims = [] # periodic dimensions
 
@@ -271,7 +271,6 @@ rd_bd_left_H  = ShapeRectangle(g, [-inf, -inf, -inf, params['rd_bd_max'], -inf, 
 rd_bd_right_H = ShapeRectangle(g, [-inf, -inf, -inf, -inf, -inf, -inf], [inf, inf, inf, params['rd_bd_min'], inf, inf])
 D_compl_H = Union(rd_bd_left_H, rd_bd_right_H)
 
-
 HJ_target = ShapeRobotTarget(xs, params) # need to code this!!!
 HJ_target = Union(HJ_target, D_compl_H)
 
@@ -289,7 +288,7 @@ HJ_staticAvoid = Union(HJ_staticAvoid, D_compl_R)
 
 
 # Look-back length and time step
-lookback_length = 5.0 #15.0
+lookback_length = 9.0 #15.0
 t_step = 0.1
 small_number = 1e-5
 tau = np.arange(start=0, stop=lookback_length + small_number, step=t_step)

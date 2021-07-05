@@ -115,12 +115,9 @@ for k in range(len(XH1)):
     i = 2*k
     spatDeriv = derivs_6d[:,:,:,:,:,:,:,i]
     
-    spatDeriv_x1 = spatDeriv[0,:,:,:,:,:,:]
-    spatDeriv_x2 = spatDeriv[1,:,:,:,:,:,:]
-    spatDeriv_x3 = spatDeriv[2,:,:,:,:,:,:]
-    spatDeriv_x4 = spatDeriv[3,:,:,:,:,:,:]
-    spatDeriv_x5 = spatDeriv[4,:,:,:,:,:,:]
-    spatDeriv_x6 = spatDeriv[5,:,:,:,:,:,:]
+    spatDeriv_x3 = spatDeriv[0,:,:,:,:,:,:]
+    spatDeriv_x5 = spatDeriv[1,:,:,:,:,:,:]
+
     
     % adding state to vector
     x_R_6D[k] = x_R
@@ -186,8 +183,8 @@ for k in range(len(XH1)):
     state = np.array([x_R, x_H, y_R, y_H, v_R, v_H])
     print(valinterp(state))
     
-    p3interp = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), spat_deriv[2])
-    p5interp = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), spat_deriv[4])
+    p3interp = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), spatDeriv_x3)
+    p5interp = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), spatDeriv_x5)
 
     deriv_x3 = p3interp(state)
     deriv_x5 = p5interp(state)
