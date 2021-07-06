@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.io as spio
+import scipy.interpolate
 
 # defining parameters for scenario
 lookback_length = 9.0 #15.0
@@ -8,7 +9,7 @@ small_number = 1e-5
 tau = np.arange(start=0, stop=lookback_length + small_number, step=t_step)
 
 # grids for interpolation
-HJ6d_N = [100; 100; 15; 15; 15; 15]
+HJ6d_N = [100, 100, 10, 10, 10, 10]
 
 params = {}
 params['rd_len_lb'] = -18
@@ -53,16 +54,21 @@ talpha = 0.01
 # waymo data
 MATLAB = spio.loadmat("XH.mat")
 XH = MATLAB['XH']
-XH[1,:] = XH[0,:] + 15
+XH[0,:] = XH[0,:] + 10
 
 # value at each timestep
 data_6d = np.load('new_center_final.npy')
-derivs_6d = np.load("6D_spat_deriv")
+derivs_6d = np.load("6D_spat_deriv.npy")
+
+print('datashape')
+print(np.shape(data_6d))
+print('deriv shape')
+print(np.shape(derivs_6d))
 
 x1 = np.linspace(params['x1_ll'],params['x1_ul'], np.size(data_6d,0), endpoint = True)
 x2 = np.linspace(params['x2_ll'],params['x2_ul'], np.size(data_6d,1), endpoint = True)
-x3 = np.linspace(params['x3_ll'],params['x3_ul'], np.size(data_6d,2), endpoint = True)
-x4 = np.linspace(params['x4_ll'],params['x4_ul'], np.size(data_6d,3), endpoint = True)
+x3 = np.linspace(params['rd_bd_min'],params['rd_bd_max'], np.size(data_6d,2), endpoint = True)
+x4 = np.linspace(params['rd_bd_min'],params['rd_bd_max'], np.size(data_6d,3), endpoint = True)
 x5 = np.linspace(params['x5_ll'],params['x5_ul'], np.size(data_6d,4), endpoint = True)
 x6 = np.linspace(params['x6_ll'],params['x6_ul'], np.size(data_6d,5), endpoint = True)
 
@@ -76,26 +82,29 @@ x_H, y_H, v_H = XH[:,0]
 
 valinterp = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), data_6d[:,:,:,:,:,:,0])
 
+value = 1
 # finding initial state for robot3
 while value > -0.0:
-    x_R = np.random.uniform()*(x1[-1] - x1[0]) + x1[0]
+    x_R = np.random.uniform()*(x0_H2 - x1[0]) + x1[0]
     y_R= np.random.uniform()*(x3[-1] - x3[0]) + x3[0]
     v_R = np.random.uniform()*(x5[-1] - x5[0]) + x5[0]
-        
+    
+    print('random state')
+    print([x_R,x_H, y_R,y_H, v_R, v_R])    
     # randomly generating a state
     state = np.array([x_R, x_H, y_R, y_H, v_R, v_H])
     value = valinterp(state)
+    print(value)
 
-
-    if x_R-x_H > overtake
+    if x_R-x_H > params['overtake']:
         value = 1
-    elif x_R-px_y < lanekeep
+    elif x_R-x_H < params['lanekeep']:
         value = 1    
-    elif x_R > x0_H2
+    elif x_R > x0_H2:
         value = 1
-    elif x_R > x_H
-        value = 1 
-
+    #elif x_R > x_H:
+        #value = 1 
+        #print('ahead h1')
 
 
 x_R_6D = np.zeros(len(tau))
@@ -110,7 +119,7 @@ y_H2_6D = np.zeros(len(tau))
 
 # calculating states and adding them to trajectory vectors
 steps = 0
-for k in range(len(XH1)):
+for k in range(len(XH[1,:])):
     # XH timestep is 0.2 seconds, tau timestep is 0.1 seconds
     i = 2*k
     spatDeriv = derivs_6d[:,:,:,:,:,:,:,i]
@@ -119,70 +128,71 @@ for k in range(len(XH1)):
     spatDeriv_x5 = spatDeriv[1,:,:,:,:,:,:]
 
     
-    % adding state to vector
+    # adding state to vector
     x_R_6D[k] = x_R
     x_H1_6D[k] = x_H
     y_R_6D[k] = y_R
     y_H1_6D[k] = y_H
     
     # how human 2 moves
-    x_H2_6D[k] = x0_H2 + v_H2*(tau(i))
+    x_H2_6D[k] = x0_H2 + v_H2*(tau[i])
     y_H2_6D[k] = y0_H2
     
     
-    if x_R > x1_ul
+    if x_R > params['x1_ul']:
         print('x_R out of bounds')
         print('step')
         print(k)
         steps = k
         break
-    elif x_H > x2_ul
+    elif x_H > params['x2_ul']:
         print('x_H out of bounds')
         print('step')
         print(k)
         steps = k
         break
-    elif v_R > x5_ul
+    elif v_R > params['x5_ul']:
         print('v_R out of bounds')
         print('step')
         print(k)
         steps = k
         break
-    elif v_R < x5_ll
+    elif v_R < params['x5_ll']:
         print('v_R out of bounds')
         print('step')
         print(k)
         steps = k
         break
-    elif v_H > x6_ul
+    elif v_H > params['x6_ul']:
         print('v_H out of bounds')
         print('step')
         print(k)
         steps = k
         break
-    elif v_H < x6_ll
+    elif v_H < params['x6_ll']:
         print('v_H out of bounds')
         print('step')
         print(k)
         steps = k
         break      
-    elif x_R-x_H > overtake
+    elif x_R-x_H > params['overtake']:
         print('overtake')
         print(k)
         steps = k
         break
-    elif x_R-x_H < lanekeep
+    elif x_R-x_H < params['lanekeep']:
         print('lanekeep')
         print(k)
         steps = k
         break
 
-    end
+    
     
     print('value')
     state = np.array([x_R, x_H, y_R, y_H, v_R, v_H])
     print(valinterp(state))
-    
+    print('step')
+    print(k)    
     p3interp = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), spatDeriv_x3)
     p5interp = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), spatDeriv_x5)
 
@@ -198,16 +208,16 @@ for k in range(len(XH1)):
 
     
     # find optimal control/dist
-    if deriv_x5 > 0
+    if deriv_x5 > 0:
         accOpt_R = -accMax_R
-    else
+    else:
         accOpt_R = accMax_R
-    end 
-    if deriv_x3 > 0
+    
+    if deriv_x3 > 0:
         vLatOpt_R = -vLatMax_R
-    else
+    else:
         vLatOpt_R = vLatMax_R
-    end 
+   
 
     '''
     % Dynamics:
@@ -225,12 +235,14 @@ for k in range(len(XH1)):
     v_R = v_R + tstep*(accOpt_R - talpha*v_R)
     
 
-    x_H = XH1(1,k+1)
-    y_H = XH1(2,k+1)
-    v_H = XH1(3,k+1)
+    x_H = XH[0,k+1]
+    y_H = XH[1,k+1]
+    v_H = XH[2,k+1]
 
 print('found trajectory')
 
 robot_traj = np.stack([x_R_6D,y_R_6D], -1)
 H1_traj = np.stack([x_H1_6D, y_H1_6D], -1)
 H2_traj = np.stack([x_H2_6D, y_H2_6D], -1)
+np.save("robotTraj", robot_traj)
+np.save("H2_traj", H2_traj)
