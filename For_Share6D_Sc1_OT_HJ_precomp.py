@@ -76,16 +76,16 @@ def ShapeRobotAvoid(xs,params):
   lat_bd = params['avoid']['lat_bd']
 
   # data1: -x_r + lgt_lb <= 0
-  data1 = -xs[0] + lgt_lb
+  data1 = -(xs[0] - xs[1]) + lgt_lb
 
   # data2: x_r - lgt_ub <= 0
-  data2 = xs[0] - lgt_ub
+  data2 = xs[0] - xs[1] - lgt_ub
 
   # data3: y_R - y_H - lat_bd <= 0
-  data3 = xs[1] - xs[2] - lat_bd
+  data3 = xs[2] - xs[3] - lat_bd
 
   # data4: -y_R + y_H - lat_bd <= 0
-  data4 = -xs[1] + xs[2] - lat_bd
+  data4 = -xs[2] + xs[3] - lat_bd
 
   # the final data is just the intersection of the four
   data = Intersection(data1, data2)
@@ -250,7 +250,7 @@ HJ_grid_max = np.array([params['x1_ul'],  params['x2_ul'],   params['rd_bd_max']
 
 HJ_dims = 6 # number of dimensions
 
-HJ_N = np.array([100, 100, 10, 10, 10, 10]) # number of grid points per dimension
+HJ_N = np.array([80, 80, 10, 10, 10, 10]) # number of grid points per dimension
 
 HJ_pdDims = [] # periodic dimensions
 
@@ -341,6 +341,5 @@ print(np.shape(HJ_Derivs))
 np.save("6D_spat_deriv", HJ_Derivs)
 
 
-#po2 = PlotOptions("2d_plot", [1,3], [20,5,0,0])
+#po2 = PlotOptions("2d_plot", [0,2], [7,7,7,7])
 #plot_isosurface(g, HJ_staticAvoid, po2)
-#plot_isosurface(g, HJ_avoid[:,:,:,:,:,:,-1], po2)

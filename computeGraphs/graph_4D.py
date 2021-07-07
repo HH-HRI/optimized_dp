@@ -156,8 +156,6 @@ def graph_4D(my_object, g, compMethod):
     V_f = hcl.placeholder(tuple(g.pts_each_dim), name="V_f", dtype=hcl.Float())
     V_init = hcl.placeholder(tuple(g.pts_each_dim), name="V_init", dtype=hcl.Float())
     l0 = hcl.placeholder(tuple(g.pts_each_dim), name="l0", dtype=hcl.Float())
-    # stationary obstacles
-    g0 = hcl.placeholder(tuple(g.pts_each_dim), name="g0", dtype=hcl.Float())
     t = hcl.placeholder((2,), name="t", dtype=hcl.Float())
     probe = hcl.placeholder(tuple(g.pts_each_dim), name="probe", dtype=hcl.Float())
 
@@ -166,7 +164,7 @@ def graph_4D(my_object, g, compMethod):
     x2 = hcl.placeholder((g.pts_each_dim[1],), name="x2", dtype=hcl.Float())
     x3 = hcl.placeholder((g.pts_each_dim[2],), name="x3", dtype=hcl.Float())
     x4 = hcl.placeholder((g.pts_each_dim[3],), name="x4", dtype=hcl.Float())
-    def graph_create(V_new, V_init, x1, x2, x3, x4, t, l0, g0, probe):
+    def graph_create(V_new, V_init, x1, x2, x3, x4, t, l0, probe):
         # Specify intermediate tensors
         deriv_diff1 = hcl.compute(V_init.shape, lambda *x:0, "deriv_diff1")
         deriv_diff2 = hcl.compute(V_init.shape, lambda *x:0, "deriv_diff2")
@@ -222,11 +220,6 @@ def graph_4D(my_object, g, compMethod):
         def minVWithV0(i, j, k, l):
             with hcl.if_(V_new[i, j, k, l] > l0[i, j, k, l]):
                 V_new[i, j, k, l] = l0[i, j, k, l]
-
-        def obstacleAvoid(i, j, k, l):
-            # if no obstacles, this won't change anything since g0 is initialized to inf at all points
-            with hcl.if_(V_new[i, j, k, l] < -g0[i, j, k, l]):
-                V_new[i, j, k, l] = -g0[i, j, k, l]
 
 
         # Calculate Hamiltonian for every grid point in V_init
@@ -507,14 +500,10 @@ def graph_4D(my_object, g, compMethod):
             result = hcl.update(V_new, lambda i, j, k, l: maxVWithVInit(i, j, k, l))
 
 
-        # post integration step    
-        hcl.update(V_new, lambda i, j, k, l: obstacleAvoid(i, j, k, l))
-        result = hcl.update(V_new, lambda i, j, k, l: obstacleAvoid(i, j, k, l))
-
         # Copy V_new to V_init
         hcl.update(V_init, lambda i, j, k, l: V_new[i, j, k, l])
         return result
-    s = hcl.create_schedule([V_f, V_init, x1, x2, x3, x4, t, l0, g0, probe], graph_create)
+    s = hcl.create_schedule([V_f, V_init, x1, x2, x3, x4, t, l0, probe], graph_create)
     ##################### CODE OPTIMIZATION HERE ###########################
     print("Optimizing\n")
 
