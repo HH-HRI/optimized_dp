@@ -201,7 +201,7 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
         valfuns.append(V_1.asnumpy())
     
     ##FOR BACKWARDS REACHABILITY NEED TO FLIP OVER LAST AXIS
-    #valfuns = np.flip(valfuns,0)
+    valfuns = np.flip(valfuns,0)
 
     # puts value arrays along new axis
     V_1 = np.stack(valfuns, axis=-1)
