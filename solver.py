@@ -100,24 +100,26 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
     ################# INITIALIZE DATA TO BE INPUT INTO EXECUTABLE ##########################
 
     print("Initializing\n")
-
-    V_0 = hcl.asarray(init_value)
-    V_1 = hcl.asarray(np.zeros(tuple(grid.pts_each_dim)))
-    l0  = hcl.asarray(init_value)
-    probe = hcl.asarray(np.zeros(tuple(grid.pts_each_dim)))
-
     # if there are no obstacles, initialize g0 to array of inf
     # post integration steps won't matter
     if (isinstance(extraArgs.get('obstacles'), np.ndarray)):
         print('defining obstacles')
         g0_dim = extraArgs['obstacles'].ndim
         g0 = extraArgs['obstacles']
-
-
+        if g0_dim > grid.dims:
+            g0_i = hcl.asarray(g0[...,0])
+        else:
+            g0_i = hcl.asarray(g0)
     else:
         print("no obstacles!")
         g0_dim = grid.dims
+        # initialize with inf so max w/ -g0 is always returns other array
         g0_i = hcl.asarray(np.ones(tuple(grid.pts_each_dim))*np.inf)
+
+    V_0 = hcl.asarray(np.maximum(init_value, -g0[...,0]))
+    V_1 = hcl.asarray(np.zeros(tuple(grid.pts_each_dim)))
+    l0  = hcl.asarray(init_value)
+    probe = hcl.asarray(np.zeros(tuple(grid.pts_each_dim)))
 
     list_x1 = np.reshape(grid.vs[0], grid.pts_each_dim[0])
     list_x2 = np.reshape(grid.vs[1], grid.pts_each_dim[1])
@@ -141,7 +143,7 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
     if grid.dims >= 6:
         list_x6 = hcl.asarray(list_x6)
 
-    # Get executable
+    # Get executable, obstacle check initial value function
     if grid.dims == 3:
         solve_pde = graph_3D(dynamics_obj, grid, compMethod)
     if grid.dims == 4:
@@ -150,7 +152,7 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
         solve_pde = graph_5D(dynamics_obj, grid, compMethod)
     if grid.dims == 6:
         solve_pde = graph_6D(dynamics_obj, grid, compMethod)
-
+  
     # Print out code for different backend
     #print(solve_pde)
 
@@ -171,35 +173,19 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
             iter += 1
             start = time.time()
 
+            # MAKE SURE THIS IS PROPER WAY
+            if g0_dim > grid.dims:
+                    g0_i = hcl.asarray(g0[...,i])
+
             # Run the execution and pass input into graph
             if grid.dims == 3:
-                if g0_dim > grid.dims:
-                    g0_i = hcl.asarray(g0[:,:,:,i])
-                else:
-                    g0_i = hcl.asarray(g0)
-
-                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, t_minh, l0, g0_i)
-            # start obstacle support for this specific case.
+                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, t_minh, l0)
             if grid.dims == 4:
-                if g0_dim > grid.dims:
-                    g0_i = hcl.asarray(g0[:,:,:,:,i])
-                else:
-                    g0_i = hcl.asarray(g0)
-                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, t_minh, l0, g0_i, probe)
+                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, t_minh, l0, probe)
             if grid.dims == 5:
-                # incorporating time varying obstacle
-                if g0_dim > grid.dims:
-                    g0_i = hcl.asarray(g0[:,:,:,:,:,i])
-                else: 
-                    g0_i = hcl.asarray(g0)
-                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5 ,t_minh, l0, g0_i)
+                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5 ,t_minh, l0)
             if grid.dims == 6:
-                # incorporating time varying obstacle
-                if g0_dim > grid.dims:
-                    g0_i = hcl.asarray(g0[:,:,:,:,:,:,i])
-                else: 
-                    g0_i = hcl.asarray(g0)
-                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6, t_minh, l0, g0_i)
+                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6, t_minh, l0)
 
             tNow = np.asscalar((t_minh.asnumpy())[0])
 
@@ -211,10 +197,11 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
             print("Computational time to integrate (s): {:.5f}".format(time.time() - start))
         
         # after each timestep adding value array to list
+        V_1 = hcl.asarray(np.maximum(V_1.asnumpy(),-g0[...,i]))
         valfuns.append(V_1.asnumpy())
     
     ##FOR BACKWARDS REACHABILITY NEED TO FLIP OVER LAST AXIS
-    np.flip(valfuns,0)
+    #valfuns = np.flip(valfuns,0)
 
     # puts value arrays along new axis
     V_1 = np.stack(valfuns, axis=-1)
