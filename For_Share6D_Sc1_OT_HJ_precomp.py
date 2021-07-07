@@ -297,6 +297,7 @@ for timestep in range(len(tau)):
   movingObst = ShapeMoveAvoid(xs,params,timestep,tau)
   obst_list.append(Union(HJ_staticAvoid, movingObst))
 print('got obstacle list')
+obst_list = np.flip(obst_list,0)
 HJ_avoid = np.stack(obst_list, axis = -1) 
 print(np.shape(HJ_avoid))
 print("computed obstacles")
