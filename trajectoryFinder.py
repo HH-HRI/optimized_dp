@@ -3,13 +3,13 @@ import scipy.io as spio
 import scipy.interpolate
 
 # defining parameters for scenario
-lookback_length = 9.0 #15.0
+lookback_length = 5.0 #15.0
 t_step = 0.1
 small_number = 1e-5
 tau = np.arange(start=0, stop=lookback_length + small_number, step=t_step)
 
 # grids for interpolation
-HJ6d_N = [100, 100, 10, 10, 10, 10]
+HJ6d_N = [80, 80, 25, 25, 25, 25]
 
 params = {}
 params['rd_len_lb'] = -18
@@ -52,18 +52,13 @@ talpha = 0.01
 
 
 # waymo data
-MATLAB = spio.loadmat("XH.mat")
-XH = MATLAB['XH']
-XH[0,:] = XH[0,:] + 10
+MATLAB = spio.loadmat("XH1.mat")
+XH = MATLAB['XH1']
+
 
 # value at each timestep
 data_6d = np.load('new_center_final.npy')
-derivs_6d = np.load("6D_spat_deriv.npy")
-
-print('datashape')
-print(np.shape(data_6d))
-print('deriv shape')
-print(np.shape(derivs_6d))
+controls = np.load("controls.npy")
 
 x1 = np.linspace(params['x1_ll'],params['x1_ul'], np.size(data_6d,0), endpoint = True)
 x2 = np.linspace(params['x2_ll'],params['x2_ul'], np.size(data_6d,1), endpoint = True)
@@ -119,15 +114,10 @@ y_H2_6D = np.zeros(len(tau))
 
 # calculating states and adding them to trajectory vectors
 steps = 0
-for k in range(len(XH[1,:])):
+for k in range(len(tau)):
     # XH timestep is 0.2 seconds, tau timestep is 0.1 seconds
-    i = 2*k
-    spatDeriv = derivs_6d[:,:,:,:,:,:,:,i]
-    
-    spatDeriv_x3 = spatDeriv[0,:,:,:,:,:,:]
-    spatDeriv_x5 = spatDeriv[1,:,:,:,:,:,:]
-
-    
+    uOpt1 = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), controls[0,:,:,:,:,:,:,k])
+    uOpt2 = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), controls[1,:,:,:,:,:,:,k])
     # adding state to vector
     x_R_6D[k] = x_R
     x_H1_6D[k] = x_H
@@ -135,7 +125,7 @@ for k in range(len(XH[1,:])):
     y_H1_6D[k] = y_H
     
     # how human 2 moves
-    x_H2_6D[k] = x0_H2 + v_H2*(tau[i])
+    x_H2_6D[k] = x0_H2 + v_H2*(tau[k])
     y_H2_6D[k] = y0_H2
     
     
@@ -193,31 +183,9 @@ for k in range(len(XH[1,:])):
     print(valinterp(state))
     print('step')
     print(k)    
-    p3interp = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), spatDeriv_x3)
-    p5interp = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), spatDeriv_x5)
-
-    deriv_x3 = p3interp(state)
-    deriv_x5 = p5interp(state)
-
-
-    print('deriv3')
-    print(deriv_x3)
-
-    print('deriv5')
-    print(deriv_x5)
-
     
-    # find optimal control/dist
-    if deriv_x5 > 0:
-        accOpt_R = -accMax_R
-    else:
-        accOpt_R = accMax_R
-    
-    if deriv_x3 > 0:
-        vLatOpt_R = -vLatMax_R
-    else:
-        vLatOpt_R = vLatMax_R
-   
+    accOpt_R = uOpt1(state)
+    vLatOpt_R = uOpt2(state)
 
     '''
     % Dynamics:
@@ -229,7 +197,7 @@ for k in range(len(XH[1,:])):
     %    \dot{x}_6 = d1 - talpha * x6    
     '''
 
-    tstep = 0.2
+    tstep = 0.1
     x_R = x_R + tstep*v_R
     y_R = y_R + tstep*vLatOpt_R
     v_R = v_R + tstep*(accOpt_R - talpha*v_R)

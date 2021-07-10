@@ -8,6 +8,7 @@ from computeGraphs.graph_3D import *
 from computeGraphs.graph_4D import *
 from computeGraphs.graph_5D import *
 from computeGraphs.graph_6D import *
+from computeGraphs.getControls_6D import *
 from TimeToReach.TimeToReach_3D import  *
 from TimeToReach.TimeToReach_4D import  *
 from valueIteration.value_iteration_3D import *
@@ -107,16 +108,16 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
         g0_dim = extraArgs['obstacles'].ndim
         g0 = extraArgs['obstacles']
         if g0_dim > grid.dims:
-            g0_i = hcl.asarray(g0[...,0])
+            g0_i = g0[...,0]
         else:
-            g0_i = hcl.asarray(g0)
+            g0_i = g0
     else:
         print("no obstacles!")
         g0_dim = grid.dims
         # initialize with inf so max w/ -g0 is always returns other array
-        g0_i = hcl.asarray(np.ones(tuple(grid.pts_each_dim))*np.inf)
+        g0_i = np.ones(tuple(grid.pts_each_dim))*np.inf
 
-    V_0 = hcl.asarray(np.maximum(init_value, -g0[...,0]))
+    V_0 = hcl.asarray(np.maximum(init_value, -g0_i))
     V_1 = hcl.asarray(np.zeros(tuple(grid.pts_each_dim)))
     l0  = hcl.asarray(init_value)
     probe = hcl.asarray(np.zeros(tuple(grid.pts_each_dim)))
@@ -144,14 +145,24 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
         list_x6 = hcl.asarray(list_x6)
 
     # Get executable, obstacle check initial value function
+    # in principle, the inserted 2 will vary depending on dimensions/#controls to the system
     if grid.dims == 3:
+        # saving optimal controls
+        Ctrl = hcl.asarray(np.zeros(tuple(np.insert(grid.pts_each_dim,0,3)))) 
         solve_pde = graph_3D(dynamics_obj, grid, compMethod)
     if grid.dims == 4:
+        # saving optimal controls
+        Ctrl = hcl.asarray(np.zeros(tuple(np.insert(grid.pts_each_dim,0,4))))
         solve_pde = graph_4D(dynamics_obj, grid, compMethod)
     if grid.dims == 5:
+        # saving optimal controls
+        Ctrl = hcl.asarray(np.zeros(tuple(np.insert(grid.pts_each_dim,0,5))))
         solve_pde = graph_5D(dynamics_obj, grid, compMethod)
     if grid.dims == 6:
+        # saving optimal controls
+        Ctrl = hcl.asarray(np.zeros(tuple(np.insert(grid.pts_each_dim,0,2)))) # up to six, using 2 for this case
         solve_pde = graph_6D(dynamics_obj, grid, compMethod)
+        init_ctrl = getControls_6D(dynamics_obj, grid)
   
     # Print out code for different backend
     #print(solve_pde)
@@ -164,6 +175,8 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
     print("Started running\n")
     # initial value array first
     valfuns = [V_0.asnumpy()] #going to keep track of each timestep
+    init_ctrl(Ctrl, V_0, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6)
+    ctrls = [Ctrl.asnumpy()]
     for i in range (1, len(tau)):
         #tNow = tau[i-1]
         t_minh= hcl.asarray(np.array((tNow, tau[i])))
@@ -173,9 +186,8 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
             iter += 1
             start = time.time()
 
-            # MAKE SURE THIS IS PROPER WAY
             if g0_dim > grid.dims:
-                    g0_i = hcl.asarray(g0[...,i])
+                    g0_i = g0[...,i]
 
             # Run the execution and pass input into graph
             if grid.dims == 3:
@@ -185,6 +197,7 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
             if grid.dims == 5:
                 solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5 ,t_minh, l0)
             if grid.dims == 6:
+                # hard coded such that Ctrl takes only 2 inputs rather than 6
                 solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6, t_minh, l0)
 
             tNow = np.asscalar((t_minh.asnumpy())[0])
@@ -196,15 +209,21 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
             print(t_minh)
             print("Computational time to integrate (s): {:.5f}".format(time.time() - start))
         
+        # obstacle calculation after each timestep
+        V_1 = hcl.asarray(np.maximum(V_1.asnumpy(),-g0_i))
+        init_ctrl(Ctrl, V_1, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6)
+
         # after each timestep adding value array to list
-        V_1 = hcl.asarray(np.maximum(V_1.asnumpy(),-g0[...,i]))
         valfuns.append(V_1.asnumpy())
+        ctrls.append(Ctrl.asnumpy())
     
     ##FOR BACKWARDS REACHABILITY NEED TO FLIP OVER LAST AXIS
     valfuns = np.flip(valfuns,0)
+    ctrls = np.flip(ctrls,0)
 
     # puts value arrays along new axis
     V_1 = np.stack(valfuns, axis=-1)
+    ctrls = np.stack(ctrls, axis=-1)
 
     # Time info printing
     print("Total kernel time (s): {:.5f}".format(execution_time))
@@ -213,6 +232,7 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
     # Save into file
     np.save("new_center_final.npy", V_1)
     #np.save("new_center_final.npy", V_1.asnumpy())
+    np.save("controls.npy", ctrls)
 
     print(np.sum(V_1 < 0))
     #print(np.sum(V_1.asnumpy() < 0))

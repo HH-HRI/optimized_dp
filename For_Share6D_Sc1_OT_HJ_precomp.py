@@ -289,7 +289,7 @@ params['xr_tar_lanekeep']  = params['rd_len_lb'] + 3
 
 # avoid set specs
 params['avoid'] = {'lgt_lb': -5.5, 'lgt_ub': 5.5, 'lat_bd':2.0}
-params['obst']  = {'x0': 0, 'v_H2':15, 'y_H2':0, 'a_max':0.5, 'theta_max':0.05, 'v_lat_max':0.1}
+params['obst']  = {'x0': 35, 'v_H2':10, 'y_H2':1.85, 'a_max':0.5, 'theta_max':0.05, 'v_lat_max':0.1}
 
 # input bounds and model parameters
 params['accMax_R']   = 3
@@ -320,7 +320,7 @@ HJ_grid_max = np.array([params['x1_ul'],  params['x2_ul'],   params['rd_bd_max']
 
 HJ_dims = 6 # number of dimensions
 
-HJ_N = np.array([80, 80, 30 , 30, 10, 10]) # number of grid points per dimension
+HJ_N = np.array([80, 80, 25, 25, 25, 25]) # number of grid points per dimension
 
 HJ_pdDims = [] # periodic dimensions
 
@@ -351,11 +351,11 @@ HJ_staticAvoid = Union(HJ_staticAvoid, D_compl_R)
 
 
 # Look-back length and time step
-lookback_length = 6.0 #15.0
-t_step = 1.5
+lookback_length = 5.0 #15.0
+t_step = 0.1
 small_number = 1e-5
 tau = np.arange(start=0, stop=lookback_length + small_number, step=t_step)
-HJ_avoid = ShapeMoveAvoid(g, params, tau, HJ_staticAvoid, mode = 'arc')
+HJ_avoid = ShapeMoveAvoid(g, params, tau, HJ_staticAvoid, mode = 'basic')
 print("computed obstacle")
 
 
