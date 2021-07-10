@@ -3,13 +3,13 @@ import scipy.io as spio
 import scipy.interpolate
 
 # defining parameters for scenario
-lookback_length = 9.0 #15.0
+lookback_length = 5.0 #15.0
 t_step = 0.1
 small_number = 1e-5
 tau = np.arange(start=0, stop=lookback_length + small_number, step=t_step)
 
 # grids for interpolation
-HJ6d_N = [100, 100, 10, 10, 10, 10]
+HJ6d_N = [80, 80, 25, 25, 25, 25]
 
 params = {}
 params['rd_len_lb'] = -18
@@ -52,18 +52,19 @@ talpha = 0.01
 
 
 # waymo data
+<<<<<<< HEAD
 MATLAB = spio.loadmat("XH2.mat")
 XH = MATLAB['XH2']
 #XH[0,:] = XH[0,:] + 10
+=======
+MATLAB = spio.loadmat("XH1.mat")
+XH = MATLAB['XH1']
+
+>>>>>>> 5472673221fed216bbc550dbbe2b99e9bf942768
 
 # value at each timestep
 data_6d = np.load('new_center_final.npy')
-derivs_6d = np.load("6D_spat_deriv.npy")
-
-print('datashape')
-print(np.shape(data_6d))
-print('deriv shape')
-print(np.shape(derivs_6d))
+controls = np.load("controls.npy")
 
 x1 = np.linspace(params['x1_ll'],params['x1_ul'], np.size(data_6d,0), endpoint = True)
 x2 = np.linspace(params['x2_ll'],params['x2_ul'], np.size(data_6d,1), endpoint = True)
@@ -92,6 +93,7 @@ while traj == False:
         y_R= np.random.uniform()*(x3[-1] - x3[0]) + x3[0]
         v_R = np.random.uniform()*(x5[-1] - x5[0]) + x5[0]
     
+<<<<<<< HEAD
         print('random state')
         print([x_R,x_H, y_R,y_H, v_R, v_R])    
         # randomly generating a state
@@ -140,6 +142,50 @@ while traj == False:
         # how human 2 moves
         x_H2_6D[k] = x0_H2 + v_H2*(tau[i])
         y_H2_6D[k] = y0_H2
+=======
+    print('random state')
+    print([x_R,x_H, y_R,y_H, v_R, v_R])    
+    # randomly generating a state
+    state = np.array([x_R, x_H, y_R, y_H, v_R, v_H])
+    value = valinterp(state)
+    print(value)
+
+    if x_R-x_H > params['overtake']:
+        value = 1
+    elif x_R-x_H < params['lanekeep']:
+        value = 1    
+    elif x_R > x0_H2:
+        value = 1
+    #elif x_R > x_H:
+        #value = 1 
+        #print('ahead h1')
+
+
+x_R_6D = np.zeros(len(tau))
+y_R_6D = np.zeros(len(tau))
+
+x_H1_6D = np.zeros(len(tau))
+y_H1_6D = np.zeros(len(tau))   
+
+x_H2_6D = np.zeros(len(tau))
+y_H2_6D = np.zeros(len(tau)) 
+
+
+# calculating states and adding them to trajectory vectors
+steps = 0
+for k in range(len(tau)):
+    # XH timestep is 0.2 seconds, tau timestep is 0.1 seconds
+    uOpt1 = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), controls[0,:,:,:,:,:,:,k])
+    uOpt2 = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), controls[1,:,:,:,:,:,:,k])
+    # adding state to vector
+    x_R_6D[k] = x_R
+    x_H1_6D[k] = x_H
+    y_R_6D[k] = y_R
+    y_H1_6D[k] = y_H
+    
+    # how human 2 moves
+    x_H2_6D[k] = x0_H2 + v_H2*(tau[k])
+    y_H2_6D[k] = y0_H2
     
     
         if x_R > params['x1_ul']:
@@ -191,52 +237,30 @@ while traj == False:
 
     
     
-        print('value')
-        state = np.array([x_R, x_H, y_R, y_H, v_R, v_H])
-        print(valinterp(state))
-        print('step')
-        print(k)    
-        p3interp = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), spatDeriv_x3)
-        p5interp = scipy.interpolate.RegularGridInterpolator((x1, x2, x3, x4, x5, x6), spatDeriv_x5)
 
-        deriv_x3 = p3interp(state)
-        deriv_x5 = p5interp(state)
-
-
-        print('deriv3')
-        print(deriv_x3)
-
-        print('deriv5')
-        print(deriv_x5)
-
+    print('value')
+    state = np.array([x_R, x_H, y_R, y_H, v_R, v_H])
+    print(valinterp(state))
+    print('step')
+    print(k)    
     
-        # find optimal control/dist
-        if deriv_x5 > 0:
-            accOpt_R = -accMax_R
-        else:
-            accOpt_R = accMax_R
-    
-        if deriv_x3 > 0:
-            vLatOpt_R = -vLatMax_R
-        else:
-            vLatOpt_R = vLatMax_R
-   
+    accOpt_R = uOpt1(state)
+    vLatOpt_R = uOpt2(state)
 
-        '''
-        % Dynamics:
-        %    \dot{x}_1 = x5
-        %    \dot{x}_2 = x6
-        %    \dot{x}_3 = u2
-        %    \dot{x}_4 = d2
-        %    \dot{x}_5 = u1 - talpha * x5
-        %    \dot{x}_6 = d1 - talpha * x6    
-        '''
+    '''
+    % Dynamics:
+    %    \dot{x}_1 = x5
+    %    \dot{x}_2 = x6
+    %    \dot{x}_3 = u2
+    %    \dot{x}_4 = d2
+    %    \dot{x}_5 = u1 - talpha * x5
+    %    \dot{x}_6 = d1 - talpha * x6    
+    '''
 
-        tstep = 0.1
-        x_R = x_R + tstep*v_R
-        y_R = y_R + tstep*vLatOpt_R
-        v_R = v_R + tstep*(accOpt_R - talpha*v_R)
-    
+    tstep = 0.1
+    x_R = x_R + tstep*v_R
+    y_R = y_R + tstep*vLatOpt_R
+    v_R = v_R + tstep*(accOpt_R - talpha*v_R)    
 
         x_H = XH[0,k+1]
         y_H = XH[1,k+1]
