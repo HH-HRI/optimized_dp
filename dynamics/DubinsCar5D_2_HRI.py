@@ -81,8 +81,13 @@ class DubinsCar5D_2_HRI:
         b_term[0] = spat_deriv[2] * state[4]
 
         # calculating theta from approximation
+<<<<<<< HEAD
         #theta_1[0] = self.atan2(spat_deriv[2], spat_deriv[0])
         #theta_2[0] = self.atan2(-(spat_deriv[2]), -(spat_deriv[0]))
+=======
+        theta_1[0] = self.atan2(spat_deriv[2], spat_deriv[0])
+        theta_2[0] = self.atan2(-(spat_deriv[2]), -(spat_deriv[0]))
+>>>>>>> 7a6b563752a937661374771f2176f3dfdeeeab64
 
 
         
@@ -92,7 +97,10 @@ class DubinsCar5D_2_HRI:
         
 
         if self.uMode == "min":
+<<<<<<< HEAD
             '''
+=======
+>>>>>>> 7a6b563752a937661374771f2176f3dfdeeeab64
             # checks if theta from atan2 is within [-thetaMax, thetaMax]
             with hcl.if_(hcl.and_(theta_1[0] <= self.thetaMax_R, theta_1[0] >= -self.thetaMax_R)):
                 sum1[0] = a_term[0] * hcl.cos(theta_1[0]) + b_term[0] * hcl.sin(theta_1[0])
@@ -105,9 +113,12 @@ class DubinsCar5D_2_HRI:
             # if not, set to inf so it won't matter
             with hcl.else_():
                 sum2[0] = np.inf
+<<<<<<< HEAD
             '''
             sum1[0] = np.inf
             sum2[0] = np.inf
+=======
+>>>>>>> 7a6b563752a937661374771f2176f3dfdeeeab64
 
             with hcl.if_(sum1[0] < sum2[0]):
                 with hcl.if_(sum1[0] < sum3[0]):
@@ -117,7 +128,12 @@ class DubinsCar5D_2_HRI:
                         thetaOpt_R[0] = -thetaOpt_R[0]
                 with hcl.else_():
                     with hcl.if_(sum3[0] < sum4[0]):
+<<<<<<< HEAD
                         thetaOpt_R[0] = thetaOpt_R[0]
+=======
+                        # keep thetaOpt = thetaMax
+                        pass
+>>>>>>> 7a6b563752a937661374771f2176f3dfdeeeab64
                     with hcl.else_():
                         thetaOpt_R[0] = -thetaOpt_R[0]
             with hcl.else_():
@@ -128,7 +144,12 @@ class DubinsCar5D_2_HRI:
                         thetaOpt_R[0] = -thetaOpt_R[0]
                 with hcl.else_():
                     with hcl.if_(sum3[0] < sum4[0]):
+<<<<<<< HEAD
                         thetaOpt_R[0] = thetaOpt_R[0]
+=======
+                        # keep thetaOpt = thetaMax
+                        pass
+>>>>>>> 7a6b563752a937661374771f2176f3dfdeeeab64
                     with hcl.else_():
                         thetaOpt_R[0] = -thetaOpt_R[0]
 
@@ -136,8 +157,11 @@ class DubinsCar5D_2_HRI:
                 accOpt_R[0] = -accOpt_R[0]
 
         else:
+<<<<<<< HEAD
 
             '''
+=======
+>>>>>>> 7a6b563752a937661374771f2176f3dfdeeeab64
             # check if theta from atan2 is within [-thetaMax, thetaMax]
             with hcl.if_(theta_1[0] <= self.thetaMax_R and theta_1[0] >= -self.thetaMax_R):
                 sum1[0] = a_term[0] * hcl.cos(theta_1[0]) + b_term[0] * hcl.sin(theta_1[0])
@@ -150,9 +174,13 @@ class DubinsCar5D_2_HRI:
             # if not, set to -inf so it won't matter
             with hcl.else_():
                 sum2[0] = -np.inf
+<<<<<<< HEAD
             '''
             sum1[0] = -np.inf
             sum2[0] = -np.inf
+=======
+
+>>>>>>> 7a6b563752a937661374771f2176f3dfdeeeab64
             # finding maximizing theta                
             with hcl.if_(sum1[0] > sum2[0]):
                 with hcl.if_(sum1[0] > sum3[0]):
@@ -162,7 +190,12 @@ class DubinsCar5D_2_HRI:
                         thetaOpt_R[0] = -thetaOpt_R[0]
                 with hcl.else_():
                     with hcl.if_(sum3[0] > sum4[0]):
+<<<<<<< HEAD
                         thetaOpt_R[0] = thetaOpt_R[0]
+=======
+                        # keep thetaOpt = thetaMax
+                        pass
+>>>>>>> 7a6b563752a937661374771f2176f3dfdeeeab64
                     with hcl.else_():
                         thetaOpt_R[0] = -thetaOpt_R[0]
             with hcl.else_():
@@ -173,7 +206,12 @@ class DubinsCar5D_2_HRI:
                         thetaOpt_R[0] = -thetaOpt_R[0]
                 with hcl.else_():
                     with hcl.if_(sum3[0] > sum4[0]):
+<<<<<<< HEAD
                         thetaOpt_R[0] = thetaOpt_R[0]
+=======
+                        # keep thetaOpt = thetaMax
+                        pass
+>>>>>>> 7a6b563752a937661374771f2176f3dfdeeeab64
                     with hcl.else_():
                         thetaOpt_R[0] = -thetaOpt_R[0]
 

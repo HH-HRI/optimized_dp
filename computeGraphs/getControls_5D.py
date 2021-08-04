@@ -253,6 +253,7 @@ def getControls_5D(my_object, g):
                                     dOpt = my_object.optDstb(t, (x1[i], x2[j], x3[k], x4[l], x5[m]),
                                         (dV_dx1[0], dV_dx2[0], dV_dx3[0], dV_dx4[0], dV_dx5[0]))
 
+<<<<<<< HEAD
                                     #Ctrl[0,i,j,k,l,m] = uOpt[0]
                                     #Ctrl[1,i,j,k,l,m] = uOpt[1]
 
@@ -267,6 +268,21 @@ def getControls_5D(my_object, g):
                                         Ctrl[1,i,j,k,l,m] = 1
                                     
                                 
+=======
+                                    Ctrl[0,i,j,k,l,m] = uOpt[0]
+                                    Ctrl[1,i,j,k,l,m] = uOpt[1]
+
+                                    '''
+                                    with hcl.if_(uOpt[0] < 0):
+                                        Ctrl[0,i,j,k,l,m] = 0
+                                    with hcl.else_():
+                                        Ctrl[0,i,j,k,l,m] = 1
+                                    with hcl.if_(uOpt[1] < 0):
+                                        Ctrl[1,i,j,k,l,m] = 0
+                                    with hcl.else_():
+                                        Ctrl[1,i,j,k,l,m] = 1
+                                    '''
+>>>>>>> 7a6b563752a937661374771f2176f3dfdeeeab64
                                     
                                    
 
