@@ -1,15 +1,15 @@
 import heterocl as hcl
 import numpy as np
 
-class DubinsCar6D__2_HRI:
-    def __init__(self, x, accMax_R, accMax_H, vLatMax_R, vLatMax_H, talpha, uMode, dMode):
+class DubinsCar6D_2_HRI:
+    def __init__(self, x, accMax_R, accMax_H, thetaMax_R, thetaMax_H, talpha, uMode, dMode):
     
         self.x = x
 
         self.accMax_R = accMax_R
         self.accMax_H = accMax_H
         self.thetaMax_R = thetaMax_R
-        self.thetatMax_H = thetaMax_H
+        self.thetaMax_H = thetaMax_H
         self.talpha = talpha
         assert(uMode in ["min", "max"])
         self.uMode = uMode
@@ -50,24 +50,26 @@ class DubinsCar6D__2_HRI:
         theta_1 = hcl.scalar(0, "theta_1")
         theta_2 = hcl.scalar(0, "theta_2")
 
-        sum1 = hcl.scalar(0, "sum1")
-        sum2 = hcl.scalar(0, "sum2")
-        sum3 = hcl.scalar(0, "sum3")
-        sum4 = hcl.scalar(0, "sum4")
+        sum1 = hcl.scalar(-np.inf, "sum1")
+        sum2 = hcl.scalar(-np.inf, "sum2")
+        sum3 = hcl.scalar(-np.inf, "sum3")
+        sum4 = hcl.scalar(-np.inf, "sum4")
 
         # use the scalar by indexing 0 everytime
         a_term[0] = spat_deriv[0] * state[4]
         b_term[0] = spat_deriv[2] * state[4]
-        theta_1[0] = np.atan2(spat_deriv[2] * state[4], spat_deriv[0] * state[4])
-        theta_2[0] = np.atan2(-(spat_deriv[2] * state[4]), -(spat_deriv[0] * state[4]))
+        theta_1[0] = np.arctan2(spat_deriv[2] * state[4], spat_deriv[0] * state[4])
+        theta_2[0] = np.arctan2(-(spat_deriv[2] * state[4]), -(spat_deriv[0] * state[4]))
         with hcl.if_(theta_1[0] <= self.thetaMax_R and theta_1[0] >= -self.thetaMax_R):
             sum1[0] = a_term[0] * hcl.cos(theta_1[0]) + b_term[0] * hcl.sin(theta_1[0])
         with hcl.else_():
-            sum1[0] = -np.inf
+            # keep the value at -inf
+            pass
         with hcl.if_(theta_2[0] <= self.thetaMax_R and theta_2[0] >= -self.thetaMax_R):
             sum2[0] = a_term[0] * hcl.cos(theta_2[0]) + b_term[0] * hcl.sin(theta_2[0])
         with hcl.else_():
-            sum2[0] = -np.inf
+            # keep value at -inf
+            pass
         sum3[0] = a_term[0] * hcl.cos(thetaOpt_R[0]) + b_term[0] * hcl.sin(thetaOpt_R[0])
         sum4[0] = a_term[0] * hcl.cos(-thetaOpt_R[0]) + b_term[0] * hcl.sin(-thetaOpt_R[0])
         
@@ -85,7 +87,8 @@ class DubinsCar6D__2_HRI:
                         thetaOpt_R[0] = theta_4[0]
                 with hcl.else_():
                     with hcl.if_(sum3[0] < sum4[0]):
-                        continue
+                        pass
+                        # keep initialized value
                     with hcl.else_():
                         thetaOpt_R[0] = -thetaOpt_R[0]
             with hcl.else_():
@@ -96,7 +99,8 @@ class DubinsCar6D__2_HRI:
                         thetaOpt_R[0] = theta_4[0]
                 with hcl.else_():
                     with hcl.if_(sum3[0] < sum4[0]):
-                        continue
+                        pass
+                        # keep initialized value
                     with hcl.else_():
                         thetaOpt_R[0] = -thetaOpt_R[0]
         else:
@@ -111,7 +115,8 @@ class DubinsCar6D__2_HRI:
                         thetaOpt_R[0] = theta_4[0]
                 with hcl.else_():
                     with hcl.if_(sum3[0] > sum4[0]):
-                        continue
+                        pass
+                        # keep initialized value
                     with hcl.else_():
                         thetaOpt_R[0] = -thetaOpt_R[0]
             with hcl.else_():
@@ -122,7 +127,8 @@ class DubinsCar6D__2_HRI:
                         thetaOpt_R[0] = theta_4[0]
                 with hcl.else_():
                     with hcl.if_(sum3[0] > sum4[0]):
-                        continue
+                        pass
+                        # keep initialized value
                     with hcl.else_():
                         thetaOpt_R[0] = -thetaOpt_R[0]
 
@@ -130,7 +136,7 @@ class DubinsCar6D__2_HRI:
         return (thetaOpt_R[0], accOpt_R[0], in3[0], in4[0])
 
 
-:
+
 
 
 
@@ -162,10 +168,10 @@ class DubinsCar6D__2_HRI:
         sum4 = hcl.scalar(0, "sum4")
 
         # use the scalar by indexing 0 everytime
-        a_term[0] = spat_deriv[0] * state[4]
-        b_term[0] = spat_deriv[2] * state[4]
-        theta_1[0] = np.atan2(spat_deriv[2] * state[4], spat_deriv[0] * state[4])
-        theta_2[0] = np.atan2(-(spat_deriv[2] * state[4]), -(spat_deriv[0] * state[4]))
+        a_term[0] = spat_deriv[1] * state[5]
+        b_term[0] = spat_deriv[3] * state[5]
+        theta_1[0] = np.atan2(spat_deriv[3] * state[5], spat_deriv[1] * state[5])
+        theta_2[0] = np.atan2(-(spat_deriv[3] * state[5]), -(spat_deriv[1] * state[5]))
         with hcl.if_(theta_1[0] <= self.thetaMax_R and theta_1[0] >= -self.thetaMax_R):
             sum1[0] = a_term[0] * hcl.cos(theta_1[0]) + b_term[0] * hcl.sin(theta_1[0])
         with hcl.else_():
@@ -189,7 +195,8 @@ class DubinsCar6D__2_HRI:
                         thetaOpt_H[0] = theta_4[0]
                 with hcl.else_():
                     with hcl.if_(sum3[0] < sum4[0]):
-                        continue
+                        pass
+                        # keep initialized value
                     with hcl.else_():
                         thetaOpt_H[0] = -thetaOpt_H[0]
             with hcl.else_():
@@ -200,7 +207,8 @@ class DubinsCar6D__2_HRI:
                         thetaOpt_H[0] = theta_4[0]
                 with hcl.else_():
                     with hcl.if_(sum3[0] < sum4[0]):
-                        continue
+                        pass
+                        # keep initialized value
                     with hcl.else_():
                         thetaOpt_H[0] = -thetaOpt_H[0]
 
@@ -218,7 +226,8 @@ class DubinsCar6D__2_HRI:
                         thetaOpt_H[0] = theta_4[0]
                 with hcl.else_():
                     with hcl.if_(sum3[0] > sum4[0]):
-                        continue
+                        pass
+                        # keep initialized value
                     with hcl.else_():
                         thetaOpt_H[0] = -thetaOpt_H[0]
             with hcl.else_():
@@ -229,7 +238,8 @@ class DubinsCar6D__2_HRI:
                         thetaOpt_H[0] = theta_4[0]
                 with hcl.else_():
                     with hcl.if_(sum3[0] > sum4[0]):
-                        continue
+                        pass
+                        # keep initialized value
                     with hcl.else_():
                         thetaOpt_H[0] = -thetaOpt_H[0]
 

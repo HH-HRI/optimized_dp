@@ -9,7 +9,7 @@ small_number = 1e-5
 tau = np.arange(start=0, stop=lookback_length + small_number, step=t_step)
 
 # grids for interpolation
-HJ6d_N = [80, 80, 25, 25, 25, 25]
+HJ6d_N = [10, 10, 10, 10, 10, 10]
 
 params = {}
 params['rd_len_lb'] = -18
@@ -83,7 +83,6 @@ while value > -0.0:
     x_R = np.random.uniform()*(x0_H2 - x1[0]) + x1[0]
     y_R= np.random.uniform()*(x3[-1] - x3[0]) + x3[0]
     v_R = np.random.uniform()*(x5[-1] - x5[0]) + x5[0]
-    
     print('random state')
     print([x_R,x_H, y_R,y_H, v_R, v_R])    
     # randomly generating a state
@@ -183,9 +182,9 @@ for k in range(len(tau)):
     print(valinterp(state))
     print('step')
     print(k)    
-    
-    accOpt_R = uOpt1(state)
-    vLatOpt_R = uOpt2(state)
+
+    accOpt_R = uOpt1(state).reshape(())
+    vLatOpt_R = uOpt2(state).reshape(())
 
     '''
     % Dynamics:
@@ -214,3 +213,4 @@ H1_traj = np.stack([x_H1_6D, y_H1_6D], -1)
 H2_traj = np.stack([x_H2_6D, y_H2_6D], -1)
 np.save("robotTraj", robot_traj)
 np.save("H2_traj", H2_traj)
+print(robot_traj)

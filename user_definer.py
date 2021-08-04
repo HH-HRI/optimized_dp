@@ -65,4 +65,4 @@ small_number = 1e-5
 tau = np.arange(start=0, stop=lookback_length + small_number, step=t_step)
 
 po = PlotOptions("3d_plot", [0,1,3], [19])
-HJSolver(my_car, g, Initial_value_f, tau, "minVWithV0", po)
+HJSolver(my_car, g, Initial_value_f, tau, "minVWithV0", po2)

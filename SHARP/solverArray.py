@@ -10,7 +10,6 @@ from computeGraphs.graph_5D import *
 from computeGraphs.graph_6D import *
 from computeGraphs.getControls_6D import *
 from computeGraphs.getControls_5D import *
-
 from TimeToReach.TimeToReach_3D import  *
 from TimeToReach.TimeToReach_4D import  *
 from valueIteration.value_iteration_3D import *
@@ -86,7 +85,7 @@ def solveValueIteration(MDP_obj):
     return V
 
 
-def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extraArgs=None):
+def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extraArgs, idx):
     print("Welcome to optimized_dp \n")
 
     ################### PARSING ARGUMENTS FROM USERS #####################
@@ -105,7 +104,7 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
     print("Initializing\n")
     # if there are no obstacles, initialize g0 to array of inf
     # post integration steps won't matter
-    if extraArgs != None and (isinstance(extraArgs.get('obstacles'), np.ndarray)):
+    if (isinstance(extraArgs.get('obstacles'), np.ndarray)):
         print('defining obstacles')
         g0_dim = extraArgs['obstacles'].ndim
         g0 = extraArgs['obstacles']
@@ -167,22 +166,15 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
     print("Started running\n")
     # initial value array first
     valfuns = [V_0.asnumpy()] #going to keep track of each timestep
-    if grid.dims == 3:
-        valfuns = np.zeros(np.insert(tuple(grid.pts_each_dim), 3, len(tau)))
-        valfuns[:,:,:,-1] = V_0.asnumpy()
-        print(np.shape(valfuns))
-    if grid.dims == 4:
-        valfuns = np.zeros(np.insert(tuple(grid.pts_each_dim), 4, len(tau)))
-        valfuns[:,:,:,:,-1] = V_0.asnumpy()
-        print(np.shape(valfuns))
     if grid.dims == 5:
         valfuns = np.zeros(np.insert(tuple(grid.pts_each_dim), 5, len(tau)))
         valfuns[:,:,:,:,:,-1] = V_0.asnumpy()
         print(np.shape(valfuns))
     if grid.dims == 6:
-        valfuns = np.zeros(np.insert(tuple(grid.pts_each_dim), 6, len(tau)))
-        valfuns[:,:,:,:,:,:,-1] = V_0.asnumpy()
-        print(np.shape(valfuns))
+        pass
+
+
+
     for i in range (1, len(tau)):
         #tNow = tau[i-1]
         t_minh= hcl.asarray(np.array((tNow, tau[i])))
@@ -204,7 +196,7 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
                 solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5 ,t_minh, l0, neg_g0)
             if grid.dims == 6:
                 # hard coded such that Ctrl takes only 2 inputs rather than 6
-                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6, t_minh, l0, neg_go)
+                solve_pde(V_1, V_0, list_x1, list_x2, list_x3, list_x4, list_x5, list_x6, t_minh, l0, neg_g0)
 
             tNow = np.asscalar((t_minh.asnumpy())[0])
 
@@ -220,20 +212,20 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
         if grid.dims == 3:
             valfuns[:,:,:, -1-i] = V_1.asnumpy()
         if grid.dims == 4:
-            valfuns[:,:,:,:,-1-i] = V_1.asnumpy()
+            valfuns[:,:,:,:, -1-i] = V_1.asnumpy()
         if grid.dims == 5:
             valfuns[:,:,:,:,:, -1-i] = V_1.asnumpy()
         if grid.dims == 6:
             valfuns[:,:,:,:,:,:, -1-i] = V_1.asnumpy()
-    
+  
 
     # Time info printing
     print("Total kernel time (s): {:.5f}".format(execution_time))
     print("Finished solving\n")
 
     # Save into file
-    # if you only need final val arrray, save valfuns[..., 0]
-    np.save("new_center_final.npy", valfuns)
+    filename = "new_center_final" + str(idx) + '.npy'
+    np.save(filename, valfuns.astype('f'))
 
     print(np.sum(valfuns < 0))
 

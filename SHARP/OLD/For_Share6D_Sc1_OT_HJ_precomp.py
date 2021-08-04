@@ -5,6 +5,7 @@ from Grid.GridProcessing import Grid
 from Shapes.ShapesFunctions import *
 # Specify the  file that includes dynamic systems
 from dynamics.DubinsCar6D_HRI import *
+from dynamics.DubinsCar6D_2_HRI import *
 # Plot options
 from plot_options import *
 # Solver core
@@ -320,7 +321,7 @@ HJ_grid_max = np.array([params['x1_ul'],  params['x2_ul'],   params['rd_bd_max']
 
 HJ_dims = 6 # number of dimensions
 
-HJ_N = np.array([80, 80, 25, 25, 25, 25]) # number of grid points per dimension
+HJ_N = np.array([20, 20, 10, 10, 10, 10]) # number of grid points per dimension
 
 HJ_pdDims = [] # periodic dimensions
 
@@ -366,7 +367,8 @@ uMode = "min"
 dMode = "max"
 HJ_minwith = "minVWithVInit"
 
-my_car = DubinsCar6D_HRI([0,0,0,0,0,0], params['accMax_R_sh'], params['accMax_H_sh'], params['vLatMax_R_sh'], params['vLatMax_H_sh'], params['talpha'], uMode, dMode)
+#my_car = DubinsCar6D_HRI([0,0,0,0,0,0], params['accMax_R_sh'], params['accMax_H_sh'], params['vLatMax_R_sh'], params['vLatMax_H_sh'], params['talpha'], uMode, dMode)
+my_car = DubinsCar6D_2_HRI([0,0,0,0,0,0], params['accMax_R_sh'], params['accMax_H_sh'], 0.6, 0.2, params['talpha'], uMode, dMode)
 
 
 #po2 = PlotOptions("3d_plot", [0,1,2], [])

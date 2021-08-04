@@ -76,8 +76,8 @@ def plot_isosurface(grid, V, plot_option):
                 showlegend = False
                 
             ))
-            if not os.path.exists("images"):
-                os.mkdir("images")
-            fig.write_image("images/fig1.png")
-            #fig.show()
-            #print("Please check the plot on your browser.")
+            #if not os.path.exists("images"):
+            #    os.mkdir("images")
+            #fig.write_image("images/fig1.png")
+            fig.show()
+            print("Please check the plot on your browser.")
