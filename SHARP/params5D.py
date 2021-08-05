@@ -1,17 +1,13 @@
 # Bring your packages onto the path
 import sys, os
-print(os.path.abspath(os.curdir))
 os.chdir("..")
 sys.path.insert(0, '')
-print(os.path.abspath(os.curdir))
 import numpy as np
 #import scipy.io as spio
 # Utility functions to initialize the problem
 from Grid.GridProcessing import Grid
 from Shapes.ShapesFunctions import *
 from SHARP.hjComp5D import HJComp
-# Specify the  file that includes dynamic systems
-from dynamics.DubinsCar6D_HRI import *
 # Plot options
 from plot_options import *
 # Solver core
@@ -35,12 +31,6 @@ Defining parameters for the scenario
 # dictionary tracking parameters of the problem
 params = {}
 
-# avoid set specs
-#idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
-# mode type: 'arc', 'rect','basic', None
-modes = ['rect', 'rect', 'rect']
-modes = [ 'rect', 'rect']
-
 velRange = [5,8,11,14,17,20]
 frontLeft = [5,15,30]
 frontRight = [5,15,30]
@@ -49,7 +39,12 @@ print(velRange)
 print(frontLeft)
 print(behindRange)
 state_idx = 0
+
+# uncomment if you want to use run in array solver 
+# If you want to model rear obstacles as occupying 2 lanes, edit line 171 in hjComp5D.py
 '''
+# avoid set specs
+idx = int(os.environ["SLURM_ARRAY_TASK_ID"]) # takes the idx from SLURM job script
 states = []
 for i in range(len(velRange)):
   for j in range(len(frontLeft)):
@@ -57,20 +52,16 @@ for i in range(len(velRange)):
       for l in range(len(behindRange)):
         states.append([[behindRange[l], 1.85, velRange[i]], [frontLeft[j], 1.85, velRange[i]], [frontRight[k], -1.85, velRange[i]]])
         state_idx = state_idx + 1
-print(state_idx)
-# if mode = None, still fill out arbitrary state
-print(np.shape(states))
-print(len(states[0])) 
 '''
-idx = 0
-states = [[[24.7013, 0.9658203,14], [30.858-40, -1.4707,14], [11.41, -3.7002, 14]]]
-states = [[[24.7013, 0.9658203,14]]]
-#states = [[ [-25,1.85,14]]]
-#states = [[[-15, 0,5], [25, -1.85, 10]]]
+##
+# if  you want to specify specific obstacle initial configurations, use below. Can add arbitrary number of obstacles
+idx = 0   #[x        y          v ]
+states = [[[24.7013, 0.9658203, 14], [30.858-40, -1.4707,14], [11.41, -3.7002, 14]]]
+##
+
 params['avoid'] = {'lgt_lb': -5.5, 'lgt_ub': 5.5, 'lat_bd':2.0}
-
-params['obst']  = {'state': states[idx] ,  'a_max':0.01, 'theta_max':0.02, 'v_lat_max':0.02, 'mode':modes[0]}
-
+modes = ['rect'] # for now make all obstacles rectangle FRS
+params['obst']  = {'state': states[idx] ,  'a_max':0.01, 'theta_max':0.02, 'v_lat_max':0.02, 'mode':modes[0]} 
 
 # Look-back length and time step
 params['lookback_length'] = 5.0
@@ -79,7 +70,6 @@ params['small_number'] = 1e-5
 
 # num points in each dim
 params['grid_points'] = [24, 24, 13, 13, 15]
-
 
 # road width
 params['x1_ll'] = -30
@@ -90,7 +80,6 @@ params['x1_ul'] = 75
 params['x2_ul'] = 75
 params['rd_bd_max'] = 3.7
 params['x5_ul'] = 35
-
 
 # target set specs
 params['xr_tar_overtake']  = 10

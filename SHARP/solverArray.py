@@ -8,8 +8,8 @@ from computeGraphs.graph_3D import *
 from computeGraphs.graph_4D import *
 from computeGraphs.graph_5D import *
 from computeGraphs.graph_6D import *
-from computeGraphs.getControls_6D import *
-from computeGraphs.getControls_5D import *
+#from computeGraphs.getControls_6D import *
+#from computeGraphs.getControls_5D import *
 from TimeToReach.TimeToReach_3D import  *
 from TimeToReach.TimeToReach_4D import  *
 from valueIteration.value_iteration_3D import *

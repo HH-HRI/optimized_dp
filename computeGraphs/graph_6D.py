@@ -551,11 +551,7 @@ def graph_6D(my_object, g, compMethod):
         return result
 
 
-<<<<<<< HEAD
     s = hcl.create_schedule([V_f, V_init, x1, x2, x3, x4, x5, x6, t, l0, neg_g0], graph_create)
-=======
-    s = hcl.create_schedule([V_f, V_init, x1, x2, x3, x4, x5, x6, t,l0], graph_create)
->>>>>>> 7a6b563752a937661374771f2176f3dfdeeeab64
     ##################### CODE OPTIMIZATION HERE ###########################
     print("Optimizing\n")
 

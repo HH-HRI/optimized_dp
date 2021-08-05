@@ -52,15 +52,9 @@ talpha = 0.01
 
 
 # waymo data
-<<<<<<< HEAD
 MATLAB = spio.loadmat("XH2.mat")
 XH = MATLAB['XH2']
 #XH[0,:] = XH[0,:] + 10
-=======
-MATLAB = spio.loadmat("XH1.mat")
-XH = MATLAB['XH1']
-
->>>>>>> 5472673221fed216bbc550dbbe2b99e9bf942768
 
 # value at each timestep
 data_6d = np.load('new_center_final.npy')

@@ -6,6 +6,7 @@ from Shapes.ShapesFunctions import *
 from dynamics.DubinsCar4D import *
 from dynamics.DubinsCapture import *
 from dynamics.DubinsCar4D2 import *
+from Plots.plotting_utilities import *
 # Plot options
 from plot_options import *
 # Solver core
@@ -25,7 +26,7 @@ import math
 # Scenario 1
 g = Grid(np.array([-4.0, -4.0, -math.pi]), np.array([4.0, 4.0, math.pi]), 3, np.array([40, 40, 40]), [2])
 
-Initial_value_f = CylinderShape(g, [], np.zeros(3), 1)
+Initial_value_f = CylinderShape(g, [2], np.zeros(3), 1)
 
 # Look-back lenght and time step
 lookback_length = 2.0
@@ -65,4 +66,4 @@ small_number = 1e-5
 tau = np.arange(start=0, stop=lookback_length + small_number, step=t_step)
 
 po = PlotOptions("3d_plot", [0,1,3], [19])
-HJSolver(my_car, g, Initial_value_f, tau, "minVWithV0", po2)
+HJSolver(my_car, g, Initial_value_f, tau, "minVWithV0", po)

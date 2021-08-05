@@ -92,7 +92,7 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
     ################### PARSING ARGUMENTS FROM USERS #####################
 
     parser = ArgumentParser()
-    parser.add_argument("-p", "--plot", default=False, type=bool)
+    parser.add_argument("-p", "--plot", default=True, type=bool)
     # # Print out LLVM option only
     # parser.add_argument("-l", "--llvm", default=False, type=bool)
     args = parser.parse_args()
@@ -237,14 +237,14 @@ def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extra
 
     print(np.sum(valfuns < 0))
 
-
+    print(args.plot)
     ##################### PLOTTING #####################
     if args.plot:
         # plot Value table when speed is maximum
-        plot_isosurface(grid, V_1, plot_option)
+        plot_isosurface(grid, valfuns[...,0], plot_option)
         #plot_isosurface(grid, V_1.asnumpy(), plot_option)
         #plot_isosurface(g, my_V, [0, 1, 3], 10)
-    return V_1
+    return valfuns[...,-1]
     #return V_1.asnumpy()
 
 def TTRSolver(dynamics_obj, grid, init_value, epsilon, plot_option):
