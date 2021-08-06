@@ -2,77 +2,16 @@ import heterocl as hcl
 import numpy as np
 import time
 from computeGraphs.CustomGraphFunctions import *
+from spatialDerivatives.first_orderENO3D import *
+from spatialDerivatives.second_orderENO3D import *
 
 #from user_definer import *
-
-################## 3D SPATIAL DERIVATIVE FUNCTION #################
-def spa_derivX(i, j, k, V, g):
-    left_deriv = hcl.scalar(0, "left_deriv")
-    right_deriv = hcl.scalar(0, "right_deriv")
-    with hcl.if_(i == 0):
-        left_boundary = hcl.scalar(0, "left_boundary")
-        left_boundary[0] = V[i, j, k] + my_abs(V[i + 1, j, k] - V[i, j, k]) * my_sign(\
-            V[i, j, k])
-        left_deriv[0] = (V[i, j, k] - left_boundary[0]) / g.dx[0]
-        right_deriv[0] = (V[i + 1, j, k] - V[i, j, k]) / g.dx[0]
-    with hcl.elif_(i == V.shape[0] - 1):
-        right_boundary = hcl.scalar(0, "right_boundary")
-        right_boundary[0] = V[i, j, k] + my_abs(V[i, j, k] - V[i - 1, j, k]) * my_sign(
-            V[i, j, k])
-        left_deriv[0] = (V[i, j, k] - V[i - 1, j, k]) / g.dx[0]
-        right_deriv[0] = (right_boundary[0] - V[i, j, k]) / g.dx[0]
-    with hcl.elif_(i != 0 and i != V.shape[0] - 1):
-        left_deriv[0] = (V[i, j, k] - V[i - 1, j, k]) / g.dx[0]
-        right_deriv[0] = (V[i + 1, j, k] - V[i, j, k]) / g.dx[0]
-    return left_deriv[0], right_deriv[0]
-
-
-def spa_derivY(i, j, k, V, g):
-    left_deriv = hcl.scalar(0, "left_deriv")
-    right_deriv = hcl.scalar(0, "right_deriv")
-    with hcl.if_(j == 0):
-        left_boundary = hcl.scalar(0, "left_boundary")
-        left_boundary[0] = V[i, j, k] + my_abs(V[i, j + 1, k] - V[i, j, k]) * my_sign(
-            V[i, j, k])
-        left_deriv[0] = (V[i, j, k] - left_boundary[0]) / g.dx[1]
-        right_deriv[0] = (V[i, j + 1, k] - V[i, j, k]) / g.dx[1]
-    with hcl.elif_(j == V.shape[1] - 1):
-        right_boundary = hcl.scalar(0, "right_boundary")
-        right_boundary[0] = V[i, j, k] + my_abs(V[i, j, k] - V[i, j - 1, k]) * my_sign(
-            V[i, j, k])
-        left_deriv[0] = (V[i, j, k] - V[i, j - 1, k]) / g.dx[1]
-        right_deriv[0] = (right_boundary[0] - V[i, j, k]) / g.dx[1]
-    with hcl.elif_(j != 0 and j != V.shape[1] - 1):
-        left_deriv[0] = (V[i, j, k] - V[i, j - 1, k]) / g.dx[1]
-        right_deriv[0] = (V[i, j + 1, k] - V[i, j, k]) / g.dx[1]
-    return left_deriv[0], right_deriv[0]
-
-
-def spa_derivT(i, j, k, V, g):
-    left_deriv = hcl.scalar(0, "left_deriv")
-    right_deriv = hcl.scalar(0, "right_deriv")
-    with hcl.if_(k == 0):
-        left_boundary = hcl.scalar(0, "left_boundary")
-        # left_boundary[0] = V_init[i,j,50]
-        left_boundary[0] = V[i, j, V.shape[2] - 1]
-        left_deriv[0] = (V[i, j, k] - left_boundary[0]) / g.dx[2]
-        right_deriv[0] = (V[i, j, k + 1] - V[i, j, k]) / g.dx[2]
-    with hcl.elif_(k == V.shape[2] - 1):
-        right_boundary = hcl.scalar(0, "right_boundary")
-        right_boundary[0] = V[i, j, 0]
-        left_deriv[0] = (V[i, j, k] - V[i, j, k - 1]) / g.dx[2]
-        right_deriv[0] = (right_boundary[0] - V[i, j, k]) / g.dx[2]
-    with hcl.elif_(k != 0 and k != V.shape[2] - 1):
-        left_deriv[0] = (V[i, j, k] - V[i, j, k - 1]) / g.dx[2]
-        right_deriv[0] = (V[i, j, k + 1] - V[i, j, k]) / g.dx[2]
-    return left_deriv[0], right_deriv[0]
-
 #def graph_3D(dynamics_obj, grid):
-def graph_3D(my_object, g, compMethod):
+def graph_3D(my_object, g, compMethod, accuracy):
     V_f = hcl.placeholder(tuple(g.pts_each_dim), name="V_f", dtype=hcl.Float())
     V_init = hcl.placeholder(tuple(g.pts_each_dim), name="V_init", dtype=hcl.Float())
     l0 = hcl.placeholder(tuple(g.pts_each_dim), name="l0", dtype=hcl.Float())
-    neg_g0 = hcl.placeholder(tuple(g.pts_each_dim), name="neg_g0", dtype=hcl.Float())
+    #neg_g0 = hcl.placeholder(tuple(g.pts_each_dim), name="neg_g0", dtype=hcl.Float())
     t = hcl.placeholder((2,), name="t", dtype=hcl.Float())
     probe = hcl.placeholder(tuple(g.pts_each_dim), name="probe", dtype=hcl.Float())
 
@@ -83,7 +22,8 @@ def graph_3D(my_object, g, compMethod):
     x1 = hcl.placeholder((g.pts_each_dim[0],), name="x1", dtype=hcl.Float())
     x2 = hcl.placeholder((g.pts_each_dim[1],), name="x2", dtype=hcl.Float())
     x3 = hcl.placeholder((g.pts_each_dim[2],), name="x3", dtype=hcl.Float())
-    def graph_create(V_new, V_init, x1, x2, x3, t, l0, neg_g0):
+    #def graph_create(V_new, V_init, x1, x2, x3, t, l0, neg_g0):
+    def graph_create(V_new, V_init, x1, x2, x3, t, l0):
         # Specify intermediate tensors
         deriv_diff1 = hcl.compute(V_init.shape, lambda *x: 0, "deriv_diff1")
         deriv_diff2 = hcl.compute(V_init.shape, lambda *x: 0, "deriv_diff2")
@@ -129,10 +69,11 @@ def graph_3D(my_object, g, compMethod):
         def minVWithV0(i, j, k):
             with hcl.if_(V_new[i, j, k] > l0[i, j, k]):
                 V_new[i, j, k] = l0[i, j, k]
+        '''        
         def obstComp(i, j, k):
             with hcl.if_(V_new[i, j, k] < neg_g0[i, j, k]):
                 V_new[i, j, k] = neg_g0[i, j, k]
-
+        '''
         # Calculate Hamiltonian for every grid point in V_init
         with hcl.Stage("Hamiltonian"):
             with hcl.for_(0, V_init.shape[0], name="i") as i:  # Plus 1 as for loop count stops at V_init.shape[0]
@@ -156,9 +97,14 @@ def graph_3D(my_object, g, compMethod):
                         # dtheta_dt = hcl.scalar(0, "dtheta_dt")
 
                         # No tensor slice operation
-                        dV_dx_L[0], dV_dx_R[0] = spa_derivX(i, j, k, V_init, g)
-                        dV_dy_L[0], dV_dy_R[0] = spa_derivY(i, j, k, V_init, g)
-                        dV_dT_L[0], dV_dT_R[0] = spa_derivT(i, j, k, V_init, g)
+                        if accuracy == "low":
+                            dV_dx_L[0], dV_dx_R[0] = spa_derivX(i, j, k, V_init, g)
+                            dV_dy_L[0], dV_dy_R[0] = spa_derivY(i, j, k, V_init, g)
+                            dV_dT_L[0], dV_dT_R[0] = spa_derivT(i, j, k, V_init, g)
+                        if accuracy == "medium":
+                            dV_dx_L[0], dV_dx_R[0] = secondOrderX(i, j, k, V_init, g)
+                            dV_dy_L[0], dV_dy_R[0] = secondOrderY(i, j, k, V_init, g)
+                            dV_dT_L[0], dV_dT_R[0] = secondOrderT(i, j, k, V_init, g)
 
                         # Saves spatial derivative diff into tables
                         deriv_diff1[i, j, k] = dV_dx_R[0] - dV_dx_L[0]
@@ -364,12 +310,13 @@ def graph_3D(my_object, g, compMethod):
         if compMethod == 'maxVWithVInit':
             result = hcl.update(V_new, lambda i, j, k: maxVWithVInit(i, j, k))
 
-        result = hcl.update(V_new, lambda i, j, k: obstComp(i, j, k))
+        #result = hcl.update(V_new, lambda i, j, k: obstComp(i, j, k))
         # Copy V_new to V_init
         hcl.update(V_init, lambda i, j, k: V_new[i, j, k])
         return result
 
-    s = hcl.create_schedule([V_f, V_init, x1, x2, x3, t, l0, neg_g0], graph_create)
+    #s = hcl.create_schedule([V_f, V_init, x1, x2, x3, t, l0, neg_g0], graph_create)
+    s = hcl.create_schedule([V_f, V_init, x1, x2, x3, t, l0], graph_create)
     ##################### CODE OPTIMIZATION HERE ###########################
     print("Optimizing\n")
 

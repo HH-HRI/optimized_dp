@@ -6,6 +6,7 @@ from Shapes.ShapesFunctions import *
 from dynamics.DubinsCar4D import *
 from dynamics.DubinsCapture import *
 from dynamics.DubinsCar4D2 import *
+from dynamics.DubinsCar5D_2_HRI import *
 from Plots.plotting_utilities import *
 # Plot options
 from plot_options import *
@@ -45,9 +46,11 @@ Assign one of the following strings to `compMethod` to specify the characteristi
 "maxVWithVInit" -> compute max V over time
 "minVWithVInit" compute min V over time
 """
-
+compMethod = {}
+compMethod['PrevSetsMode'] = "minVWithV0"
 # HJSolver(dynamics object, grid, initial value function, time length, system objectives, plotting options)
-HJSolver(my_car, g, Initial_value_f, tau, "minVWithV0", po2)
+HJSolver(my_car, g, Initial_value_f, tau, compMethod, po2, accuracy = 'medium')
+
 
 # Second Scenario
 g = Grid(np.array([-3.0, -1.0, 0.0, -math.pi]), np.array([3.0, 4.0, 4.0, math.pi]), 4, np.array([60, 60, 20, 36]), [3])
@@ -66,4 +69,4 @@ small_number = 1e-5
 tau = np.arange(start=0, stop=lookback_length + small_number, step=t_step)
 
 po = PlotOptions("3d_plot", [0,1,3], [19])
-HJSolver(my_car, g, Initial_value_f, tau, "minVWithV0", po)
+HJSolver(my_car, g, Initial_value_f, tau, compMethod, po, accuracy = 'high')

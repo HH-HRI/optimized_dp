@@ -86,9 +86,9 @@ params['xr_tar_overtake']  = 10
 params['xr_tar_lanekeep']  = -15
 
 # input bounds and model parameters
-params['accMax_R_sh']   = 4
+params['accMax_R_sh']   = 3
 params['vLatMax_R_sh']  = 4
-params['thetaMax_R_sh'] = 0.67
+params['thetaMax_R_sh'] = 0.6
 # vlat nom and dev
 params['vLgtNom_H_sh']   = 14.5
 params['vLgtDev_H_sh']   = 1

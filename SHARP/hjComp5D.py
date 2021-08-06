@@ -9,13 +9,14 @@ from dynamics.DubinsCar5D_2_HRI import *
 # Plot options
 from plot_options import *
 # Solver core
+#from solver import HJSolver
 from SHARP.solverArray import HJSolver
 from Plots.plotting_utilities import *
 import math
 
 ## Shape functions for scenario
 
-# find the implicit surface of the Robot's avoid set:
+# find the implicit surface of the Robot's target set:
 def ShapeRobotTarget(g,params):
   xr_tar_overtake = params['xr_tar_overtake']
   xr_tar_lanekeep = params['xr_tar_lanekeep']
@@ -48,25 +49,15 @@ def ShapeRobotTarget(g,params):
 
 # find the implicit surface of the Robot's avoid set:
 def ShapeRobotAvoid(g,params):
-  # find the implicit surface of the Robot's avoid set: 
-  # -x_r + lgt_lb <= 0        (data1), and
-  #  x_r - lgt_ub <= 0        (data2), and
-  #  y_R - y_H - lat_bd <= 0  (data3), and
-  # -y_R + y_H - lat_bd <= 0  (data4)
-  # state vector = [x_r, y_R, y_H, v_r]
-  #
-  # NOTICE: 
-  # This function assumes zero sublevel set, i.e. negative inside,
-  # positive outside. Add a negative sign if using this as an avoid set.
 
   # set specifications
   lgt_lb = params['avoid']['lgt_lb']
   lgt_ub = params['avoid']['lgt_ub']
   lat_bd = params['avoid']['lat_bd']
 
-  # data1: -x_r + lgt_lb <= 0
+  # data1: -(x_r - x_h) + lgt_lb <= 0
   data1 = -(g.vs[0] - g.vs[1]) + lgt_lb
-  # data2: x_r - lgt_ub <= 0
+  # data2: x_r - x_h - lgt_ub <= 0
   data2 = g.vs[0] - g.vs[1] - lgt_ub
   # data3: y_R - y_H - lat_bd <= 0
   data3 = g.vs[2] - g.vs[3] - lat_bd
@@ -79,40 +70,7 @@ def ShapeRobotAvoid(g,params):
   data = Intersection(data,  data4)
 
   return(data)
-'''
-def ShapeRobotAvoidGoal(g,params):
-  # find the implicit surface of the Robot's avoid set: 
-  # -x_r + lgt_lb <= 0        (data1), and
-  #  x_r - lgt_ub <= 0        (data2), and
-  #  y_R - y_H - lat_bd <= 0  (data3), and
-  # -y_R + y_H - lat_bd <= 0  (data4)
-  # state vector = [x_r, y_R, y_H, v_r]
-  #
-  # NOTICE: 
-  # This function assumes zero sublevel set, i.e. negative inside,
-  # positive outside. Add a negative sign if using this as an avoid set.
 
-  # set specifications
-  lgt_lb = params['avoid']['lgt_lb']
-  lgt_ub = params['avoid']['lgt_ub']
-  lat_bd = params['avoid']['lat_bd']
-
-  # data1: -x_r + lgt_lb <= 0
-  data1 = (g.vs[0] - g.vs[1]) - lgt_lb
-  # data2: x_r - lgt_ub <= 0
-  data2 = -(g.vs[0] - g.vs[1]) + lgt_ub
-  # data3: y_R - y_H - lat_bd <= 0
-  data3 = (g.vs[2] - g.vs[3]) + lat_bd
-  # data4: -y_R + y_H - lat_bd <= 0
-  data4 = -(g.vs[2] - g.vs[3]) + lat_bd
-
-  # the final data is just the intersection of the four
-  data = Union(data1, data2)
-  data = Union(data,  data3)
-  data = Union(data,  data4)
-
-  return(data)
-'''
 # mode: arc, rect, None 
 def ShapeMoveAvoid(grid, params, state, tau, static):
   print(state)
@@ -337,7 +295,9 @@ def HJComp(params, idx):
   '''
   uMode = "min"
   dMode = "max"
-  HJ_minwith = "minVWithVInit"
+  compMethod = {}
+  compMethod["PrevSetsMode"] = "minVWithVInit"
+  compMethod["TargetSetMode"] = 'max'
 
   #my_car = DubinsCar5D_HRI([0,0,0,0,0], params['accMax_R_sh'], params['vLgtDev_H_sh'], params['vLgtNom_H_sh'],params['vLatMax_R_sh'], params['vLatMax_H_sh'], params['talpha'], uMode, dMode)
   my_car = DubinsCar5D_HRI([0,0,0,0,0], params['accMax_R_sh'], params['vLgtDev_H_sh'], params['vLgtNom_H_sh'],params['thetaMax_R_sh'], params['vLatMax_H_sh'], params['talpha'], uMode, dMode)
@@ -360,5 +320,5 @@ def HJComp(params, idx):
   '''
 
   #HJSolver(dynamics object, grid, initial value function, time length, system objectives, plotting options, extra arguments)
-  valfun = HJSolver(my_car, g, HJ_target, tau, HJ_minwith, None, extraArgs, idx)
+  valfun = HJSolver(my_car, g, HJ_target, tau, compMethod, None, idx, extraArgs, accuracy = 'high')
 
