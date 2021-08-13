@@ -319,6 +319,12 @@ def HJComp(params, idx):
   plot_isosurface(g, HJ_avoid[:,:,:,:,:,-40], po2)
   '''
 
+  inputs = [HJ_target, HJ_avoid]
+  print(np.shape(HJ_target))
+  print(np.shape(inputs[0]))
+
+  print(np.shape(inputs[1]))
+
   #HJSolver(dynamics object, grid, initial value function, time length, system objectives, plotting options, extra arguments)
-  valfun = HJSolver(my_car, g, HJ_target, tau, compMethod, None, idx, extraArgs, accuracy = 'high')
+  valfun = HJSolver(my_car, g, inputs, tau, compMethod, None, idx, accuracy = 'high')
 

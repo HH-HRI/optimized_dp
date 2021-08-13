@@ -91,7 +91,7 @@ def solveValueIteration(MDP_obj):
 
 #def HJSolver(dynamics_obj, grid, init_value, tau, compMethod, plot_option, extraArgs, idx):
 def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
-             plot_option, idx, extraArgs = None, accuracy="low"):
+             plot_option, idx, accuracy="low"):
 
 
     print("Welcome to optimized_dp \n")
@@ -100,6 +100,7 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
         constraint = multiple_value[1]
     else:
         init_value = multiple_value
+        constraint = None
     ################### PARSING ARGUMENTS FROM USERS #####################
 
     parser = ArgumentParser()
@@ -115,21 +116,20 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
 
     print("Initializing\n")
 
-    if extraArgs != None: 
-        print('defining obstacles')
-        g0_dim = extraArgs['obstacles'].ndim
-        g0 = extraArgs['obstacles']
-        if g0_dim > grid.dims:
-            g0_i = g0[...,0]
-        else:
-            g0_i = g0
-        V_0 = hcl.asarray(np.maximum(init_value, -g0_i))
-        l0  = hcl.asarray(np.maximum(init_value, -g0_i))
-        
-    else:
+    if constraint is None:
         print("no obstacles!")
         V_0 = hcl.asarray(init_value)
         l0 = hcl.asarray(init_value)
+    else: 
+        print('defining obstacles')
+        constraint_dim = constraint.ndim
+        if constraint_dim > grid.dims:
+            constraint_i = constraint[...,0]
+        else:
+            constraint_i = constraint
+        V_0 = hcl.asarray(np.maximum(init_value, -constraint_i))
+        l0  = hcl.asarray(np.maximum(init_value, -constraint_i))
+        
 
 
     V_1 = hcl.asarray(np.zeros(tuple(grid.pts_each_dim)))
@@ -203,8 +203,8 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
     for i in range (1, len(tau)):
         #tNow = tau[i-1]
         t_minh= hcl.asarray(np.array((tNow, tau[i])))
-        if "TargetSetMode" in compMethod and g0_dim > grid.dims:
-                    g0_i = g0[...,i]
+        if "TargetSetMode" in compMethod and constraint_dim > grid.dims:
+                    constraint_i = constraint[...,i]
         while tNow <= tau[i] - 1e-4:
             tmp_arr = V_0.asnumpy()
             # Start timing
@@ -212,7 +212,6 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
             start = time.time()
             
             
-            neg_g0 = hcl.asarray(-g0_i)
             # Run the execution and pass input into graph
             if grid.dims == 3:
                 solve_pde(V_1, V_0, list_x1, list_x2, list_x3, t_minh, l0)
@@ -236,9 +235,9 @@ def HJSolver(dynamics_obj, grid, multiple_value, tau, compMethod,
             # If TargetSetMode is specified by user
             if "TargetSetMode" in compMethod:
                 if compMethod["TargetSetMode"] == "max":
-                  tmp_val = np.maximum(V_0.asnumpy(), -g0_i)
+                  tmp_val = np.maximum(V_0.asnumpy(), -constraint_i)
                 elif compMethod["TargetSetMode"] == "min":
-                  tmp_val = np.minimum(V_0.asnumpy(), constraint)
+                  tmp_val = np.minimum(V_0.asnumpy(), -constraint_i)
                 # Update final result
                 V_1 = hcl.asarray(tmp_val)
                 # Update input for next iteration
