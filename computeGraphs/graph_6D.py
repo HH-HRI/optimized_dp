@@ -11,7 +11,6 @@ def graph_6D(my_object, g, compMethod, accuracy):
     V_f = hcl.placeholder(tuple(g.pts_each_dim), name="V_f", dtype=hcl.Float())
     V_init = hcl.placeholder(tuple(g.pts_each_dim), name="V_init", dtype=hcl.Float())
     l0 = hcl.placeholder(tuple(g.pts_each_dim), name="l0", dtype=hcl.Float())
-    #neg_g0 = hcl.placeholder(tuple(g.pts_each_dim), name="neg_g0", dtype=hcl.Float())
     t = hcl.placeholder((2,), name="t", dtype=hcl.Float())
 
     # Positions vector
@@ -22,7 +21,6 @@ def graph_6D(my_object, g, compMethod, accuracy):
     x5 = hcl.placeholder((g.pts_each_dim[4],), name="x5", dtype=hcl.Float())
     x6 = hcl.placeholder((g.pts_each_dim[5],), name="x6", dtype=hcl.Float())
 
-    #def graph_create(V_new, V_init, x1, x2, x3, x4, x5, x6, t, l0, neg_g0):
     def graph_create(V_new, V_init, x1, x2, x3, x4, x5, x6, t, l0):
         # Specify intermediate tensors
         deriv_diff1 = hcl.compute(V_init.shape, lambda *x: 0, "deriv_diff1")
@@ -72,24 +70,23 @@ def graph_6D(my_object, g, compMethod, accuracy):
             # t[0] = min_deriv2[0]
             return stepBound[0]
 
-        def maxVWithV0(i, j, k, l, m, n):  # Take the max
+        # Operation with target value array
+        def maxVWithV0(i, j, k, l, m, n):  # Take max
             with hcl.if_(V_new[i, j, k, l, m, n] < l0[i, j, k, l, m, n]):
                 V_new[i, j, k, l, m, n] = l0[i, j, k, l, m, n]
 
-        # Max(V, g )
-        def maxVWithCStraint(i, j, k, l, m, n):
-            with hcl.if_(V_new[i, j, k, l, m, n] < 5.0):
-                V_new[i, j, k, l, m, n] = 1.0
+        def minVWithV0(i, j, k, l, m, n):  # Take min
+            with hcl.if_(V_new[i, j, k, l, m, n] > l0[i, j, k, l, m, n]):
+                V_new[i, j, k, l, m, n] = l0[i, j, k, l, m, n]
 
-        # Min with V_before
+        # Operations over time
         def minVWithVInit(i, j, k, l, m, n):
             with hcl.if_(V_new[i, j, k, l, m, n] > V_init[i, j, k, l, m, n]):
                 V_new[i, j, k, l, m, n] = V_init[i, j, k, l, m, n]
-        '''
-        def obstComp(i, j, k, l, m, n):
-            with hcl.if_(V_new[i, j, k, l, m, n] < neg_g0[i, j, k, l, m, n]):
-                V_new[i, j, k, l, m, n] = neg_g0[i, j, k, l, m, n]
-        '''
+
+        def maxVWithVInit(i, j, k, l, m, n):
+            with hcl.if_(V_new[i, j, k, l, m, n] > V_init[i, j, k, l, m, n]):
+                V_new[i, j, k, l, m, n] = V_init[i, j, k, l, m, n]
 
         # Calculate Hamiltonian for every grid point in V_init
         with hcl.Stage("Hamiltonian"):
@@ -156,7 +153,7 @@ def graph_6D(my_object, g, compMethod, accuracy):
                                     uOpt = my_object.opt_ctrl(t, (x1[i], x2[j], x3[k], x4[l], x5[m], x6[n]), (
                                     dV_dx1[0], dV_dx2[0], dV_dx3[0], dV_dx4[0], dV_dx5[0], dV_dx6[0]))
                                     # Find optimal disturbance
-                                    dOpt = my_object.optDstb(t, (x1[i], x2[j], x3[k], x4[l], x5[m], x6[n]), (
+                                    dOpt = my_object.opt_dstb(t, (x1[i], x2[j], x3[k], x4[l], x5[m], x6[n]), (
                                     dV_dx1[0], dV_dx2[0], dV_dx3[0], dV_dx4[0], dV_dx5[0], dV_dx6[0]))
 
                                     # Find rates of changes based on dynamics equation
@@ -260,13 +257,22 @@ def graph_6D(my_object, g, compMethod, accuracy):
             alpha5 = hcl.scalar(0, "alpha5")
             alpha6 = hcl.scalar(0, "alpha6")
 
-            ''' missplaced?
+            """ 
+                NOTE: If optimal adversarial disturbance is not dependent on states
+                , the below approximate LOWER/UPPER BOUND optimal disturbance is  accurate.
+                If that's not the case, move the next two statements into the nested loops and modify the states passed in 
+                as my_object.opt_dstb(t, (x1[i], x2[j], x3[k], x4[l], ...), ...).
+                The reason we don't have this line in the nested loop by default is to avoid redundant computations
+                for certain systems where disturbance are not dependent on states.
+                In general, dissipation amount can just be approximates.  
+            """
+
             # Find LOWER BOUND optimal disturbance
-            dOptL1[0], dOptL2[0], dOptL3[0], dOptL4[0] = my_object.optDstb(t, (x1[i], x2[j], x3[k], x4[l], x5[m], x6[n]), (
-            min_deriv1[0], min_deriv2[0], min_deriv3[0], min_deriv4[0], min_deriv5[0], min_deriv6[0]))
+            dOptL1[0], dOptL2[0], dOptL3[0], dOptL4[0] = my_object.opt_dstb(t, (x1[0], x2[0], x3[0], x4[0], x5[0], x6[0]),
+                (min_deriv1[0], min_deriv2[0], min_deriv3[0], min_deriv4[0], min_deriv5[0], min_deriv6[0]))
             # Find UPPER BOUND optimal disturbance
-            dOptU1[0], dOptU2[0], dOptU3[0], dOptU4[0] = my_object.optDstb(t, (x1[i], x2[j], x3[k], x4[l], x5[m], x6[n]), (
-            max_deriv1[0], max_deriv2[0], max_deriv3[0], max_deriv4[0], max_deriv5[0], max_deriv6[0]))'''
+            dOptU1[0], dOptU2[0], dOptU3[0], dOptU4[0] = my_object.opt_dstb(t, (x1[0], x2[0], x3[0], x4[0], x5[0], x6[0]),
+                (max_deriv1[0], max_deriv2[0], max_deriv3[0], max_deriv4[0], max_deriv5[0], max_deriv6[0]))
             with hcl.for_(0, V_init.shape[0], name="i") as i:
                 with hcl.for_(0, V_init.shape[1], name="j") as j:
                     with hcl.for_(0, V_init.shape[2], name="k") as k:
@@ -300,16 +306,6 @@ def graph_6D(my_object, g, compMethod, accuracy):
                                     dx_UU4 = hcl.scalar(0, "dx_UU4")
                                     dx_UU5 = hcl.scalar(0, "dx_UU5")
                                     dx_UU6 = hcl.scalar(0, "dx_UU6")
-
-                                    # placed here \/
-                                    # Find LOWER BOUND optimal disturbance
-                                    dOptL1[0], dOptL2[0], dOptL3[0], dOptL4[0] = my_object.optDstb(t, (x1[i], x2[j], x3[k], x4[l], x5[m], x6[n]), (
-                                    min_deriv1[0], min_deriv2[0], min_deriv3[0], min_deriv4[0], min_deriv5[0], min_deriv6[0]))
-                                    # Find UPPER BOUND optimal disturbance
-                                    dOptU1[0], dOptU2[0], dOptU3[0], dOptU4[0] = my_object.optDstb(t, (x1[i], x2[j], x3[k], x4[l], x5[m], x6[n]), (
-                                    max_deriv1[0], max_deriv2[0], max_deriv3[0], max_deriv4[0], max_deriv5[0], max_deriv6[0]))
-
-
 
                                     # Find LOWER BOUND optimal control
                                     uOptL1[0], uOptL2[0], uOptL3[0], uOptL4[0] = my_object.opt_ctrl(t, (x1[i], x2[j], x3[k], x4[l], x5[m], x6[n]), (
@@ -420,21 +416,19 @@ def graph_6D(my_object, g, compMethod, accuracy):
         # if compMethod == 'HJ_PDE':
         result = hcl.update(V_new,
                             lambda i, j, k, l, m, n: V_init[i, j, k, l, m, n] + V_new[i, j, k, l, m, n] * delta_t[0])
-        if compMethod == 'maxVWithV0':
+        if compMethod == 'maxVWithV0' or compMethod == 'maxVWithVTarget':
             result = hcl.update(V_new, lambda i, j, k, l, m, n: maxVWithV0(i, j, k, l, m, n))
-        if compMethod == 'maxVWithCStraint':
-            result = hcl.update(V_new, lambda i, j, k, l, m, n: maxVWithCStraint(i, j, k, l, m, n))
+        if compMethod == 'minVWithV0' or compMethod == 'minVWithVTarget':
+            result = hcl.update(V_new, lambda i, j, k, l, m, n: minVWithV0(i, j, k, l, m, n))
+        if compMethod == 'maxVWithVInit':
+            result = hcl.update(V_new, lambda i, j, k, l, m, n: maxVWithVInit(i, j, k, l, m, n))
         if compMethod == 'minVWithVInit':
             result = hcl.update(V_new, lambda i, j, k, l, m, n: minVWithVInit(i, j, k, l, m, n))
-        
-
-
-        #result = hcl.update(V_new, lambda i, j, k, l, m, n: obstComp(i, j, k, l, m, n))
         # Copy V_new to V_init
         hcl.update(V_init, lambda i, j, k, l, m, n: V_new[i, j, k, l, m, n])
         return result
 
-    #s = hcl.create_schedule([V_f, V_init, x1, x2, x3, x4, x5, x6, t, l0, neg_g0], graph_create)
+
     s = hcl.create_schedule([V_f, V_init, x1, x2, x3, x4, x5, x6, t, l0], graph_create)
     ##################### CODE OPTIMIZATION HERE ###########################
     print("Optimizing\n")
@@ -451,6 +445,5 @@ def graph_6D(my_object, g, compMethod, accuracy):
     # if args.llvm:
     #    print(hcl.lower(s))
 
-  
     # Return executable
     return (hcl.build(s))

@@ -11,18 +11,13 @@ def graph_3D(my_object, g, compMethod, accuracy):
     V_f = hcl.placeholder(tuple(g.pts_each_dim), name="V_f", dtype=hcl.Float())
     V_init = hcl.placeholder(tuple(g.pts_each_dim), name="V_init", dtype=hcl.Float())
     l0 = hcl.placeholder(tuple(g.pts_each_dim), name="l0", dtype=hcl.Float())
-    #neg_g0 = hcl.placeholder(tuple(g.pts_each_dim), name="neg_g0", dtype=hcl.Float())
     t = hcl.placeholder((2,), name="t", dtype=hcl.Float())
     probe = hcl.placeholder(tuple(g.pts_each_dim), name="probe", dtype=hcl.Float())
-
-    #my_object = dynamics_obj
-    #g = grid
 
     # Positions vector
     x1 = hcl.placeholder((g.pts_each_dim[0],), name="x1", dtype=hcl.Float())
     x2 = hcl.placeholder((g.pts_each_dim[1],), name="x2", dtype=hcl.Float())
     x3 = hcl.placeholder((g.pts_each_dim[2],), name="x3", dtype=hcl.Float())
-    #def graph_create(V_new, V_init, x1, x2, x3, t, l0, neg_g0):
     def graph_create(V_new, V_init, x1, x2, x3, t, l0):
         # Specify intermediate tensors
         deriv_diff1 = hcl.compute(V_init.shape, lambda *x: 0, "deriv_diff1")
@@ -69,11 +64,7 @@ def graph_3D(my_object, g, compMethod, accuracy):
         def minVWithV0(i, j, k):
             with hcl.if_(V_new[i, j, k] > l0[i, j, k]):
                 V_new[i, j, k] = l0[i, j, k]
-        '''        
-        def obstComp(i, j, k):
-            with hcl.if_(V_new[i, j, k] < neg_g0[i, j, k]):
-                V_new[i, j, k] = neg_g0[i, j, k]
-        '''
+
         # Calculate Hamiltonian for every grid point in V_init
         with hcl.Stage("Hamiltonian"):
             with hcl.for_(0, V_init.shape[0], name="i") as i:  # Plus 1 as for loop count stops at V_init.shape[0]
@@ -91,10 +82,6 @@ def graph_3D(my_object, g, compMethod, accuracy):
                         dV_dT_L = hcl.scalar(0, "dV_dT_L")
                         dV_dT_R = hcl.scalar(0, "dV_dT_R")
                         dV_dT = hcl.scalar(0, "dV_dT")
-                        # Variables to keep track of dynamics
-                        # dx_dt = hcl.scalar(0, "dx_dt")
-                        # dy_dt = hcl.scalar(0, "dy_dt")
-                        # dtheta_dt = hcl.scalar(0, "dtheta_dt")
 
                         # No tensor slice operation
                         if accuracy == "low":
@@ -119,7 +106,7 @@ def graph_3D(my_object, g, compMethod, accuracy):
                         # Use method of DubinsCar to solve optimal control instead
                         uOpt = my_object.opt_ctrl(t, (x1[i], x2[j], x3[k]),
                                                       (dV_dx[0], dV_dy[0], dV_dT[0]))
-                        dOpt = my_object.optDstb(t, (x1[i], x2[j], x3[k]),
+                        dOpt = my_object.opt_dstb(t, (x1[i], x2[j], x3[k]),
                                                  (dV_dx[0], dV_dy[0], dV_dT[0]))
 
                         # Calculate dynamical rates of changes
@@ -127,7 +114,6 @@ def graph_3D(my_object, g, compMethod, accuracy):
 
                         # Calculate Hamiltonian terms:
                         V_new[i, j, k] = -(dx_dt * dV_dx[0] + dy_dt * dV_dy[0] + dtheta_dt * dV_dT[0])
-                        #probe[i, j, k] = V_new[i, j, k]
 
                         # Get derivMin
                         with hcl.if_(dV_dx_L[0] < min_deriv1[0]):
@@ -206,28 +192,20 @@ def graph_3D(my_object, g, compMethod, accuracy):
                         dx_LU3 = hcl.scalar(0, "dx_LU3")
 
                         # Find LOWER BOUND optimal disturbance
-                        dOptL1[0], dOptL2[0], dOptL3[0] = my_object.optDstb(t,  (x1[i], x2[j], x3[k]),\
+                        dOptL1[0], dOptL2[0], dOptL3[0] = my_object.opt_dstb(t,  (x1[i], x2[j], x3[k]),\
                                                                             (min_deriv1[0], min_deriv2[0],min_deriv3[0]))
-                        # probe[i, j, k] = dOptL1[0] + dOptL2[0] + dOptL3[0]
 
-
-                        dOptU1[0], dOptU2[0], dOptU3[0] = my_object.optDstb(t, (x1[i], x2[j], x3[k]),\
+                        dOptU1[0], dOptU2[0], dOptU3[0] = my_object.opt_dstb(t, (x1[i], x2[j], x3[k]),\
                                                                             (max_deriv1[0], max_deriv2[0],max_deriv3[0]))
-                        # probe[i, j, k] = dOptL1[0] + dOptL2[0] + dOptL3[0]
 
                         # Find LOWER BOUND optimal control
                         uOptL1[0], uOptL2[0], uOptL3[0] = my_object.opt_ctrl(t, (x1[i], x2[j], x3[k]), \
                                                                                         (min_deriv1[0], min_deriv2[0],min_deriv3[0]))
-                        # probe[i, j, k] = uOptL1[0] + uOptL2[0] + uOptL3[0]
-
 
                         # Find UPPER BOUND optimal control
                         uOptU1[0], uOptU2[0], uOptU3[0] = my_object.opt_ctrl(t, (x1[i], x2[j], x3[k]),
                                                                                         (max_deriv1[0], max_deriv2[0],
                                                                                          max_deriv3[0]))
-                        #probe[i, j, k] = uOptU1[0] + uOptU2[0] + uOptU3[0]
-
-
                         # Find magnitude of rates of changes
                         dx_LL1[0], dx_LL2[0], dx_LL3[0] = my_object.dynamics(t, (x1[i], x2[j], x3[k]),
                                                                                         (uOptL1[0], uOptL2[0], uOptL3[0]), \
@@ -235,7 +213,6 @@ def graph_3D(my_object, g, compMethod, accuracy):
                         dx_LL1[0] = my_abs(dx_LL1[0])
                         dx_LL2[0] = my_abs(dx_LL2[0])
                         dx_LL3[0] = my_abs(dx_LL3[0])
-                        #probe[i, j, k] = dx_LL1[0] + dx_LL2[0] + dx_LL3[0]
 
                         dx_LU1[0], dx_LU2[0], dx_LU3[0] = my_object.dynamics(t, (x1[i], x2[j], x3[k]),
                                                                                         (uOptL1[0], uOptL2[0], uOptL3[0]), \
@@ -249,9 +226,6 @@ def graph_3D(my_object, g, compMethod, accuracy):
                         alpha2[0] = my_max(dx_LL2[0], dx_LU2[0])
                         alpha3[0] = my_max(dx_LL3[0], dx_LU3[0])
 
-                        # dx_UL3 = hcl.scalar(0, "dx_UL3")
-                        # dx_UL1[0], dx_UL2[0], dx_UL3[0], dx_UL4[0] = my_object.dynamics(t, (x1[i], x2[j], x3[k], x4[l]),
-                        #                                                                 uOptU, dOptL)
                         dx_UL1[0], dx_UL2[0], dx_UL3[0]= my_object.dynamics(t, (x1[i], x2[j], x3[k]),\
                                                                                             (uOptU1[0], uOptU2[0], uOptU3[0]), \
                                                                                             (dOptL1[0], dOptL2[0], dOptL3[0]))
@@ -274,16 +248,13 @@ def graph_3D(my_object, g, compMethod, accuracy):
                         alpha1[0] = my_max(alpha1[0], dx_UU1[0])
                         alpha2[0] = my_max(alpha2[0], dx_UU2[0])
                         alpha3[0] = my_max(alpha3[0], dx_UU3[0])
-                        #probe[i, j, k] = alpha1[0] + alpha2[0] + alpha3[0]
 
                         diss = hcl.scalar(0, "diss")
                         diss[0] = 0.5 * (
                                 deriv_diff1[i, j, k] * alpha1[0] + deriv_diff2[i, j, k] * alpha2[0] + deriv_diff3[i, j, k] * alpha3[0])
-                        # probe[i, j, k] = alpha2[0]
+                        
                         # Finally
                         V_new[i, j, k] = -(V_new[i, j, k] - diss[0])
-                        # probe[i, j, k] = alpha3[0]
-                        # Get maximum alphas in each dimension
 
                         # Calculate alphas
                         with hcl.if_(alpha1[0] > max_alpha1[0]):
@@ -301,21 +272,19 @@ def graph_3D(my_object, g, compMethod, accuracy):
         result = hcl.update(V_new, lambda i, j, k: V_init[i, j, k] + V_new[i, j, k] * delta_t[0])
 
         # Different computation method check
-        if compMethod == 'maxVWithV0':
+        if compMethod == 'maxVWithV0' or compMethod == 'maxVWithVTarget':
             result = hcl.update(V_new, lambda i, j, k: maxVWithV0(i, j, k))
-        if compMethod == 'minVWithV0':
+        if compMethod == 'minVWithV0' or compMethod == 'minVWithVTarget':
             result = hcl.update(V_new, lambda i, j, k: minVWithV0(i, j, k))
         if compMethod == 'minVWithVInit':
             result = hcl.update(V_new, lambda i, j, k: minVWithVInit(i, j, k))
         if compMethod == 'maxVWithVInit':
             result = hcl.update(V_new, lambda i, j, k: maxVWithVInit(i, j, k))
 
-        #result = hcl.update(V_new, lambda i, j, k: obstComp(i, j, k))
         # Copy V_new to V_init
         hcl.update(V_init, lambda i, j, k: V_new[i, j, k])
         return result
 
-    #s = hcl.create_schedule([V_f, V_init, x1, x2, x3, t, l0, neg_g0], graph_create)
     s = hcl.create_schedule([V_f, V_init, x1, x2, x3, t, l0], graph_create)
     ##################### CODE OPTIMIZATION HERE ###########################
     print("Optimizing\n")
@@ -324,7 +293,7 @@ def graph_3D(my_object, g, compMethod, accuracy):
     s_H = graph_create.Hamiltonian
     s_D = graph_create.Dissipation
 
-    # Thread parallelize hamiltonian and dissipation
+    # Thread parallelize hamiltonian and dissipation computation
     s[s_H].parallel(s_H.i)
     s[s_D].parallel(s_D.i)
 
@@ -334,6 +303,4 @@ def graph_3D(my_object, g, compMethod, accuracy):
 
     # Return executable
     return (hcl.build(s))
-
-
-
+    

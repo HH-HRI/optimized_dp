@@ -1,8 +1,8 @@
 import heterocl as hcl
 
 """ 4D DUBINS CAR DYNAMICS IMPLEMENTATION 
- x_dot = v * cos(theta)
- y_dot = v * sin(theta)
+ x_dot = v * cos(theta) + d_1
+ y_dot = v * sin(theta) + d_2
  v_dot = a
  theta_dot = w
  """
@@ -10,9 +10,9 @@ class DubinsCar4D:
     def __init__(self, x=[0,0,0,0], uMin = [-1,-1], uMax = [1,1], dMin = [-0.25,-0.25],
                  dMax=[0.25,0.25], uMode="min", dMode="max"):
         """Creates a Dublin Car with the following states:
-           X position, Y position, acceleration, heading
-           The first element of user control and disturbance is acceleration
-           The second element of user control and disturbance is heading
+           X position, Y position, speed, heading
+           The controls are the acceleration and turn rate (angular speed)
+           The disturbances are the noise in the velocity components.
         Args:
             x (list, optional): Initial state . Defaults to [0,0,0,0].
             uMin (list, optional): Lowerbound of user control. Defaults to [-1,-1].
@@ -73,7 +73,7 @@ class DubinsCar4D:
         # return 3, 4 even if you don't use them
         return (opt_a[0] ,opt_w[0], in3[0], in4[0])
 
-    def optDstb(self, spat_deriv):
+    def opt_dstb(self, t, state, spat_deriv):
         """
         :param spat_deriv: tuple of spatial derivative in all dimensions
         :return: a tuple of optimal disturbances

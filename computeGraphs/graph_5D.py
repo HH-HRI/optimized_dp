@@ -9,7 +9,6 @@ def graph_5D(my_object, g, compMethod, accuracy):
     V_f = hcl.placeholder(tuple(g.pts_each_dim), name="V_f", dtype=hcl.Float())
     V_init = hcl.placeholder(tuple(g.pts_each_dim), name="V_init", dtype=hcl.Float())
     l0 = hcl.placeholder(tuple(g.pts_each_dim), name="l0", dtype=hcl.Float())
-    neg_g0 = hcl.placeholder(tuple(g.pts_each_dim), name="neg_g0", dtype=hcl.Float())
     t = hcl.placeholder((2,), name="t", dtype=hcl.Float())
 
     # Positions vector
@@ -19,7 +18,6 @@ def graph_5D(my_object, g, compMethod, accuracy):
     x4 = hcl.placeholder((g.pts_each_dim[3],), name="x4", dtype=hcl.Float())
     x5 = hcl.placeholder((g.pts_each_dim[4],), name="x5", dtype=hcl.Float())
 
-    #def graph_create(V_new, V_init, x1, x2, x3, x4, x5, t, l0, neg_g0):
     def graph_create(V_new, V_init, x1, x2, x3, x4, x5, t, l0):
         # Specify intermediate tensors
         deriv_diff1 = hcl.compute(V_init.shape, lambda *x: 0, "deriv_diff1")
@@ -73,11 +71,6 @@ def graph_5D(my_object, g, compMethod, accuracy):
             with hcl.if_(V_new[i, j, k, l, m] > l0[i, j, k, l, m]):
                 V_new[i, j, k, l, m] = l0[i, j, k, l, m]
 
-        # Max(V, g )
-        # def maxVWithCStraint(i, j, k, l, m):
-        #     with hcl.if_(V_new[i, j, k, l, m] < 5.0):
-        #         V_new[i, j, k, l, m] = 1.0
-
         # Min with V_before
         def minVWithVInit(i, j, k, l, m):
             with hcl.if_(V_new[i, j, k, l, m] > V_init[i, j, k, l, m]):
@@ -87,11 +80,6 @@ def graph_5D(my_object, g, compMethod, accuracy):
             with hcl.if_(V_new[i, j, k, l, m] < V_init[i, j, k, l, m]):
                 V_new[i, j, k, l, m] = V_init[i, j, k, l, m]
 
-        '''
-        def obstComp(i, j, k, l, m):
-            with hcl.if_(V_new[i, j, k, l, m] < neg_g0[i, j, k, l, m]):
-                V_new[i, j, k, l, m] = neg_g0[i, j, k, l, m]
-        '''
         # Calculate Hamiltonian for every grid point in V_init
         with hcl.Stage("Hamiltonian"):
             with hcl.for_(0, V_init.shape[0], name="i") as i:
@@ -146,16 +134,15 @@ def graph_5D(my_object, g, compMethod, accuracy):
                                     dV_dx5[0] = (dV_dx5_L + dV_dx5_R) / 2
 
                                     # Find optimal control
-                                    uOpt = my_object.opt_ctrl(t, (x1[i], x2[j], x3[k], x4[l], x5[m]), (
-                                    dV_dx1[0], dV_dx2[0], dV_dx3[0], dV_dx4[0], dV_dx5[0]))
+                                    uOpt = my_object.opt_ctrl(t, (x1[i], x2[j], x3[k], x4[l], x5[m]), \
+                                    (dV_dx1[0], dV_dx2[0], dV_dx3[0], dV_dx4[0], dV_dx5[0]))
                                     # Find optimal disturbance
-                                    dOpt = my_object.optDstb(t, (x1[i], x2[j], x3[k], x4[l], x5[m]),
-                                        (dV_dx1[0], dV_dx2[0], dV_dx3[0], dV_dx4[0], dV_dx5[0]))
+                                    dOpt = my_object.opt_dstb(t, (x1[i], x2[j], x3[k], x4[l], x5[m]), \
+                                    (dV_dx1[0], dV_dx2[0], dV_dx3[0], dV_dx4[0], dV_dx5[0]))
 
                                     # Find rates of changes based on dynamics equation
-                                    dx1_dt, dx2_dt, dx3_dt, dx4_dt, dx5_dt = my_object.dynamics(t, (
-                                    x1[i], x2[j], x3[k], x4[l], x5[m]), uOpt, dOpt)
-
+                                    dx1_dt, dx2_dt, dx3_dt, dx4_dt, dx5_dt = my_object.dynamics(t, (x1[i], x2[j], x3[k], x4[l], x5[m]), uOpt, dOpt)
+                                    
                                     # Calculate Hamiltonian terms:
                                     V_new[i, j, k, l, m] = -(
                                                 dx1_dt * dV_dx1[0] + dx2_dt * dV_dx2[0] + dx3_dt * dV_dx3[0] + dx4_dt *
@@ -246,15 +233,22 @@ def graph_5D(my_object, g, compMethod, accuracy):
             alpha4 = hcl.scalar(0, "alpha4")
             alpha5 = hcl.scalar(0, "alpha5")
 
-            ''' missplaced?
+            """ 
+                NOTE: If optimal adversarial disturbance is not dependent on states
+                , the below approximate LOWER/UPPER BOUND optimal disturbance is  accurate.
+                If that's not the case, move the next two statements into the nested loops and modify the states passed in 
+                as my_object.opt_dstb(t, (x1[i], x2[j], x3[k], x4[l], ...), ...).
+                The reason we don't have this line in the nested loop by default is to avoid redundant computations
+                for certain systems where disturbance are not dependent on states.
+                In general, dissipation amount can just be approximates.  
+            """
+
             # Find LOWER BOUND optimal disturbance
-            dOptL1[0], dOptL2[0], dOptL3[0], dOptL4[0], dOptL5[0] = my_object.optDstb(t,
-                                                            (x1[i], x2[j], x3[k], x4[l], x5[m]),
-                (min_deriv1[0], min_deriv2[0], min_deriv3[0], min_deriv4[0], min_deriv5[0]))
+            dOptL1[0], dOptL2[0], dOptL3[0], dOptL4[0], dOptL5[0] = my_object.opt_dstb(t, (x1[0], x2[0], x3[0], x4[0], x5[0]), \
+                                                    (min_deriv1[0], min_deriv2[0], min_deriv3[0], min_deriv4[0], min_deriv5[0]))
             # Find UPPER BOUND optimal disturbance
-            dOptU1[0], dOptU2[0], dOptU3[0], dOptU4[0], dOptU5[0] = my_object.optDstb(t,
-                                                            (x1[i], x2[j], x3[k], x4[l], x5[m]),
-                (max_deriv1[0], max_deriv2[0], max_deriv3[0], max_deriv4[0], max_deriv5[0]))'''
+            dOptU1[0], dOptU2[0], dOptU3[0], dOptU4[0], dOptU5[0] = my_object.opt_dstb(t, (x1[0], x2[0], x3[0], x4[0], x5[0]), \
+                                                    (max_deriv1[0], max_deriv2[0], max_deriv3[0], max_deriv4[0], max_deriv5[0]))
             with hcl.for_(0, V_init.shape[0], name="i") as i:
                 with hcl.for_(0, V_init.shape[1], name="j") as j:
                     with hcl.for_(0, V_init.shape[2], name="k") as k:
@@ -284,27 +278,12 @@ def graph_5D(my_object, g, compMethod, accuracy):
                                     dx_UU4 = hcl.scalar(0, "dx_UU4")
                                     dx_UU5 = hcl.scalar(0, "dx_UU5")
 
-                                    # placed here \/
-                                    # Find LOWER BOUND optimal disturbance
-                                    dOptL1[0], dOptL2[0], dOptL3[0], dOptL4[0], dOptL5[0] = my_object.optDstb(t,
-                                                                                    (x1[i], x2[j], x3[k], x4[l], x5[m]),
-                                        (min_deriv1[0], min_deriv2[0], min_deriv3[0], min_deriv4[0], min_deriv5[0]))
-                                    # Find UPPER BOUND optimal disturbance
-                                    dOptU1[0], dOptU2[0], dOptU3[0], dOptU4[0], dOptU5[0] = my_object.optDstb(t,
-                                                                                    (x1[i], x2[j], x3[k], x4[l], x5[m]),
-                                        (max_deriv1[0], max_deriv2[0], max_deriv3[0], max_deriv4[0], max_deriv5[0]))
-                                    # placed here /\
-
                                     # Find LOWER BOUND optimal control
-                                    uOptL1[0], uOptL2[0], uOptL3[0], uOptL4[0], uOptL5[0] = my_object.opt_ctrl(t, \
-                                                                                    (x1[i], x2[j], x3[k], x4[l], x5[m]), (
-                                                    min_deriv1[0], min_deriv2[0], min_deriv3[0], min_deriv4[0], min_deriv5[0],
-                                    ))
+                                    uOptL1[0], uOptL2[0], uOptL3[0], uOptL4[0], uOptL5[0] = my_object.opt_ctrl(t, (x1[i], x2[j], x3[k], x4[l], x5[m]), \
+                                                                            (min_deriv1[0], min_deriv2[0], min_deriv3[0], min_deriv4[0], min_deriv5[0]))
                                     # Find UPPER BOUND optimal control
-                                    uOptU1[0], uOptU2[0], uOptU3[0], uOptU4[0], uOptU5[0] = my_object.opt_ctrl(t, \
-                                                                                    (x1[i], x2[j], x3[k], x4[l], x5[m]), (
-                                                    max_deriv1[0], max_deriv2[0], max_deriv3[0], max_deriv4[0], max_deriv5[0],
-                                    ))
+                                    uOptU1[0], uOptU2[0], uOptU3[0], uOptU4[0], uOptU5[0] = my_object.opt_ctrl(t, (x1[i], x2[j], x3[k], x4[l], x5[m]), \
+                                                                            (max_deriv1[0], max_deriv2[0], max_deriv3[0], max_deriv4[0], max_deriv5[0]))
 
                                     # Get upper bound and lower bound rates of changes
                                     dx_LL1[0], dx_LL2[0], dx_LL3[0], dx_LL4[0], dx_LL5[0] = my_object.dynamics(t, \
@@ -396,21 +375,19 @@ def graph_5D(my_object, g, compMethod, accuracy):
         # if compMethod == 'HJ_PDE':
         result = hcl.update(V_new,
                             lambda i, j, k, l, m: V_init[i, j, k, l, m] + V_new[i, j, k, l, m] * delta_t[0])
-        if compMethod == 'maxVWithV0':
+        if compMethod == 'maxVWithV0' or compMethod == 'maxVWithVTarget':
             result = hcl.update(V_new, lambda i, j, k, l, m: maxVWithV0(i, j, k, l, m))
-        if compMethod == 'minVWithV0':
+        if compMethod == 'minVWithV0' or compMethod == 'minVWithVTarget':
             result = hcl.update(V_new, lambda i, j, k, l, m: minVWithV0(i, j, k, l, m))
         if compMethod == 'maxVWithVInit':
             result = hcl.update(V_new, lambda i, j, k, l, m: maxVWithVInit(i, j, k, l, m))
         if compMethod == 'minVWithVInit':
             result = hcl.update(V_new, lambda i, j, k, l, m: minVWithVInit(i, j, k, l, m))
-
-        #result = hcl.update(V_new, lambda i, j, k, l, m: obstComp(i, j, k, l, m))
         # Copy V_new to V_init
         hcl.update(V_init, lambda i, j, k, l, m: V_new[i, j, k, l, m])
         return result
 
-    #s = hcl.create_schedule([V_f, V_init, x1, x2, x3, x4, x5, t, l0, neg_g0], graph_create)
+
     s = hcl.create_schedule([V_f, V_init, x1, x2, x3, x4, x5, t, l0], graph_create)
     ##################### CODE OPTIMIZATION HERE ###########################
     print("Optimizing\n")
