@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #----------------------------------------------------------------------------
 # Created By  : Haimin Hu
-# Created Date: 06/08/2022
+# Created Date: 06/13/2022
 # version = '1.0'
 # ---------------------------------------------------------------------------
 """ Computes the optimal control and evaluates the value function."""
@@ -10,7 +10,7 @@
 
 import numpy as np
 import scipy.interpolate
-from Grid.GridProcessing import Grid
+
 
 def get_HJ_action(state, value, grid, params, uMode="min"):
     """
@@ -58,32 +58,33 @@ def get_HJ_action(state, value, grid, params, uMode="min"):
 
     # p0 = grid.get_value(spat_deriv[0], state)
     # p1 = grid.get_value(spat_deriv[1], state)
-    p2 = grid.get_value(spat_deriv[2], state)
+    # p2 = grid.get_value(spat_deriv[2], state)
     p3 = grid.get_value(spat_deriv[3], state)
     p4 = grid.get_value(spat_deriv[4], state)
+    p5 = grid.get_value(spat_deriv[5], state)
             
     # Find the optimal control.
     if uMode == "min":
-        if p4 - p3 >= 0:
+        if (p4 - p3)*np.cos(state[5]) >= 0:
             u0_opt = params['aMin_R']
         else:
             u0_opt = params['aMax_R']
 
-        if p2 >= 0:
-            u1_opt = params['vyMin_R']
+        if p5 >= 0:
+            u1_opt = params['omegaMin_R']
         else:
-            u1_opt = params['vyMax_R']
+            u1_opt = params['omegaMax_R']
 
     elif uMode == "max":
-        if p4 - p3 < 0:
+        if (p4 - p3)*np.cos(state[5]) < 0:
             u0_opt = params['aMin_R']
         else:
             u0_opt = params['aMax_R']
 
-        if p2 < 0:
-            u1_opt = params['vyMin_R']
+        if p5 < 0:
+            u1_opt = params['omegaMin_R']
         else:
-            u1_opt = params['vyMax_R']
+            u1_opt = params['omegaMax_R']
 
     return np.array(([[u0_opt, u1_opt]])).T
 
