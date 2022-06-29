@@ -25,19 +25,19 @@ class Merge5D_HRI:
         self.aMax_r  = aMax_r
         self.aMin_r  = aMin_r
 
-        # assert(uMode in ["min", "max"])
+        assert(uMode in ["min", "max"])
         self.uMode = uMode
-        # if uMode == "min":
-        #     assert(dMode == "max")
-        # else:
-        #     assert(dMode == "min")
+        if uMode == "min":
+            assert(dMode == "max")
+        else:
+            assert(dMode == "min")
         self.dMode = dMode
 
 
     def opt_ctrl(self, t, state, spat_deriv):
         """
                 :param  spat_deriv: tuple of spatial derivative in all dimensions
-                        state: x1, x2, x3, x4, x5
+                        state: x0, x1, x2, x3, x4
                         t: time
                 :return: a tuple of optimal controls
         """
@@ -55,74 +55,72 @@ class Merge5D_HRI:
             x4_dot = u0 - d1
         '''
 
-        accOpt = hcl.scalar(self.aMax_R, "accOpt")
-        vLatOpt_R = hcl.scalar(self.vyMax_R, "vLatOpt_R")
+        # accOpt = hcl.scalar(self.aMax_R, "accOpt")
+        # vLatOpt_R = hcl.scalar(self.vyMax_R, "vLatOpt_R")
 
-        # Just create and pass back, even though they're not used
-        in3 = hcl.scalar(0, "in3")
-        in4 = hcl.scalar(0, "in4")
-        in5 = hcl.scalar(0, "in5")
+        # # Just create and pass back, even though they're not used
+        # in3 = hcl.scalar(0, "in3")
+        # in4 = hcl.scalar(0, "in4")
+        # in5 = hcl.scalar(0, "in5")
+
+        # with hcl.if_(self.uMode == "min"):
+        #     with hcl.if_(spat_deriv[4] - spat_deriv[3] >= 0):
+        #         accOpt[0] = -accOpt[0]
+        #     with hcl.if_(spat_deriv[2] >= 0):
+        #         vLatOpt_R[0] = -vLatOpt_R[0]
+
+        # with hcl.if_(self.uMode == "max"):
+        #     with hcl.if_(spat_deriv[4] - spat_deriv[3] < 0):
+        #         accOpt[0] = -accOpt[0]
+        #     with hcl.if_(spat_deriv[2] < 0):
+        #         vLatOpt_R[0] = -vLatOpt_R[0]
+        # # return 3, 4 even if you don't use them
+        # return (accOpt[0], vLatOpt_R[0], in3[0], in4[0], in5[0])
+
+
+        # Define hcl variables.
+        aMax_R_hcl  = hcl.scalar(self.aMax_R, "aMax_R_hcl")
+        aMin_R_hcl  = hcl.scalar(self.aMin_R, "aMin_R_hcl")
+        vyMax_R_hcl = hcl.scalar(self.vyMax_R, "vyMax_R_hcl")
+        vyMin_R_hcl = hcl.scalar(self.vyMin_R, "vyMin_R_hcl")
+
+        # Define dummy hcl variables.
+        u0 = hcl.scalar(0, "u0")
+        u1 = hcl.scalar(0, "u1")
+        u2 = hcl.scalar(0, "u2")
+        u3 = hcl.scalar(0, "u3")
+        u4 = hcl.scalar(0, "u4")
 
         with hcl.if_(self.uMode == "min"):
             with hcl.if_(spat_deriv[4] - spat_deriv[3] >= 0):
-                accOpt[0] = -accOpt[0]
+                u0[0] = aMin_R_hcl[0]
+            with hcl.else_():
+                u0[0] = aMax_R_hcl[0]
+
             with hcl.if_(spat_deriv[2] >= 0):
-                vLatOpt_R[0] = -vLatOpt_R[0]
+                u1[0] = vyMin_R_hcl[0]
+            with hcl.else_():
+                u1[0] = vyMax_R_hcl[0]
 
-        with hcl.if_(self.uMode == "max"):
+        with hcl.elif_(self.uMode == "max"):
             with hcl.if_(spat_deriv[4] - spat_deriv[3] < 0):
-                accOpt[0] = -accOpt[0]
+                u0[0] = aMin_R_hcl[0]
+            with hcl.else_():
+                u0[0] = aMax_R_hcl[0]
+
             with hcl.if_(spat_deriv[2] < 0):
-                vLatOpt_R[0] = -vLatOpt_R[0]
-        # return 3, 4 even if you don't use them
-        return (accOpt[0], vLatOpt_R[0], in3[0], in4[0], in5[0])
+                u1[0] = vyMin_R_hcl[0]
+            with hcl.else_():
+                u1[0] = vyMax_R_hcl[0]
 
-
-
-        # # Define hcl variables.
-        # aMax_R_hcl  = hcl.scalar(self.aMax_R, "aMax_R_hcl")
-        # aMin_R_hcl  = hcl.scalar(self.aMin_R, "aMin_R_hcl")
-        # vyMax_R_hcl = hcl.scalar(self.vyMax_R, "vyMax_R_hcl")
-        # vyMin_R_hcl = hcl.scalar(self.vyMin_R, "vyMin_R_hcl")
-
-        # # Define dummy hcl variables.
-        # u0 = hcl.scalar(0, "u0")
-        # u1 = hcl.scalar(0, "u1")
-        # u2 = hcl.scalar(0, "u2")
-        # u3 = hcl.scalar(0, "u3")
-        # u4 = hcl.scalar(0, "u4")
-
-        # with hcl.if_(self.uMode == "min"):
-        # # if self.uMode == "min": #!!!
-        #     with hcl.if_(spat_deriv[4] - spat_deriv[3] >= 0):
-        #         u0[0] = aMin_R_hcl[0]
-        #     with hcl.else_():
-        #         u0[0] = aMax_R_hcl[0]
-
-        #     with hcl.if_(spat_deriv[2] >= 0):
-        #         u1[0] = vyMin_R_hcl[0]
-        #     with hcl.else_():
-        #         u1[0] = vyMax_R_hcl[0]
-        # with hcl.elif_(self.uMode == "max"):
-        # # else: #!!!
-        #     with hcl.if_(spat_deriv[4] - spat_deriv[3] < 0):
-        #         u0[0] = aMin_R_hcl[0]
-        #     with hcl.else_():
-        #         u0[0] = aMax_R_hcl[0]
-
-        #     with hcl.if_(spat_deriv[2] < 0):
-        #         u1[0] = vyMin_R_hcl[0]
-        #     with hcl.else_():
-        #         u1[0] = vyMax_R_hcl[0]
-
-        # # Return dummy variables even if you don't use them.
-        # return (u0[0], u1[0], u2[0], u3[0], u4[0])
+        # Return dummy variables even if you don't use them.
+        return (u0[0], u1[0], u2[0], u3[0], u4[0])
 
 
     def opt_dstb(self, t, state, spat_deriv):
         """
             :param  spat_deriv: tuple of spatial derivative in all dimensions
-                    state: x1, x2, x3, x4, x5
+                    state: x0, x1, x2, x3, x4
                     t: time
             :return: a tuple of optimal disturbances
         """
